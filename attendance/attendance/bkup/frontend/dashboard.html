@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+
+<title>YOLO Dashboard</title>
+
+<link rel="icon" href="assets/favicon.png">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/dashboard.css">
+
+</head>
+
+<body>
+
+<header id="topbar">
+
+<div class="logo">
+
+YOLO Dataset Dashboard
+
+</div>
+
+<div class="toolbar">
+
+<button id="refreshBtn">
+Refresh
+</button>
+
+<a href="annotate.html">
+
+<button>
+
+Annotator
+
+</button>
+
+</a>
+
+<a href="visualize.html">
+
+<button>
+
+Visualizer
+
+</button>
+
+</a>
+
+</div>
+
+</header>
+
+<main id="dashboard">
+
+<section class="summary">
+
+<div class="card">
+
+<h2>Total Images</h2>
+
+<div id="totalImages">
+
+0
+
+</div>
+
+</div>
+
+<div class="card">
+
+<h2>Annotated</h2>
+
+<div id="annotatedImages">
+
+0
+
+</div>
+
+</div>
+
+<div class="card">
+
+<h2>Pending</h2>
+
+<div id="pendingImages">
+
+0
+
+</div>
+
+</div>
+
+<div class="card">
+
+<h2>Total Objects</h2>
+
+<div id="totalObjects">
+
+0
+
+</div>
+
+</div>
+
+</section>
+
+<section class="progress">
+
+<h2>
+
+Annotation Progress
+
+</h2>
+
+<progress
+id="progressBar"
+value="0"
+max="100">
+</progress>
+
+<div id="progressText">
+
+0 %
+
+</div>
+
+</section>
+
+<section class="tableSection">
+
+<h2>
+
+Dataset
+
+</h2>
+
+<table id="datasetTable">
+
+<thead>
+
+<tr>
+
+<th>#</th>
+
+<th>Image</th>
+
+<th>Objects</th>
+
+<th>Status</th>
+
+<th>Action</th>
+
+</tr>
+
+</thead>
+
+<tbody>
+
+</tbody>
+
+</table>
+
+</section>
+
+<section class="statistics">
+
+<div class="card">
+
+<h2>
+
+Class Statistics
+
+</h2>
+
+<table id="classTable">
+
+<thead>
+
+<tr>
+
+<th>Class</th>
+
+<th>Count</th>
+
+</tr>
+
+</thead>
+
+<tbody>
+
+<tr>
+
+<td>Person</td>
+
+<td id="personCount">
+
+0
+
+</td>
+
+</tr>
+
+</tbody>
+
+</table>
+
+</div>
+
+<div class="card">
+
+<h2>
+
+Dataset Information
+
+</h2>
+
+<table>
+
+<tr>
+
+<td>
+
+Images Folder
+
+</td>
+
+<td>
+
+images/
+
+</td>
+
+</tr>
+
+<tr>
+
+<td>
+
+Labels Folder
+
+</td>
+
+<td>
+
+labels/
+
+</td>
+
+</tr>
+
+<tr>
+
+<td>
+
+Format
+
+</td>
+
+<td>
+
+YOLO
+
+</td>
+
+</tr>
+
+</table>
+
+</div>
+
+</section>
+
+</main>
+
+<footer id="statusbar">
+
+Ready
+
+</footer>
+
+<script type="module" src="js/dashboard.js"></script>
+
+</body>
+
+</html>

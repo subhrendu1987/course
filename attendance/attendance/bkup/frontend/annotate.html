@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+
+<title>YOLO Annotator</title>
+
+<link rel="icon" href="assets/favicon.png">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/layout.css">
+<link rel="stylesheet" href="css/canvas.css">
+
+</head>
+
+<body>
+
+<header id="topbar">
+
+<div class="logo">
+YOLO Web Annotator
+</div>
+
+<div class="toolbar">
+
+<button id="openBtn">Open Folder</button>
+
+<button id="prevBtn">◀</button>
+
+<button id="nextBtn">▶</button>
+
+<button id="fitBtn">Fit</button>
+
+<button id="zoomInBtn">+</button>
+
+<button id="zoomOutBtn">−</button>
+
+<button id="saveBtn">Save</button>
+
+</div>
+
+</header>
+
+<div id="workspace">
+
+<aside id="sidebar">
+
+<div class="search">
+
+<input
+id="searchBox"
+type="text"
+placeholder="Search images">
+
+</div>
+
+<ul id="imageList"></ul>
+
+</aside>
+
+<main id="viewer">
+
+<div id="imageHeader">
+
+<div id="imageName">
+No Image Loaded
+</div>
+
+<div id="studentCount">
+Students : 0
+</div>
+
+</div>
+
+<div id="canvasContainer">
+
+<canvas id="annotationCanvas"></canvas>
+
+</div>
+
+</main>
+
+<aside id="propertyPanel">
+
+<h3>Selected Box</h3>
+
+<table>
+
+<tr>
+<td>ID</td>
+<td id="boxID">-</td>
+</tr>
+
+<tr>
+<td>Class</td>
+<td>
+
+<select id="classSelect">
+
+<option value="0">
+Person
+</option>
+
+</select>
+
+</td>
+</tr>
+
+<tr>
+<td>X</td>
+<td id="boxX">-</td>
+</tr>
+
+<tr>
+<td>Y</td>
+<td id="boxY">-</td>
+</tr>
+
+<tr>
+<td>Width</td>
+<td id="boxWidth">-</td>
+</tr>
+
+<tr>
+<td>Height</td>
+<td id="boxHeight">-</td>
+</tr>
+
+</table>
+
+<button id="deleteBtn">
+
+Delete Box
+
+</button>
+
+</aside>
+
+</div>
+
+<footer id="statusbar">
+
+<div>
+
+Image
+
+<span id="statusImage">
+
+0 / 0
+
+</span>
+
+</div>
+
+<div>
+
+Mouse
+
+<span id="mousePosition">
+
+0,0
+
+</span>
+
+</div>
+
+<div>
+
+Zoom
+
+<span id="zoomLevel">
+
+100%
+
+</span>
+
+</div>
+
+<div>
+
+Mode
+
+<span id="currentMode">
+
+Draw
+
+</span>
+
+</div>
+
+</footer>
+
+<input
+type="file"
+id="imageInput"
+accept=".jpg,.jpeg,.png"
+multiple
+hidden>
+
+<input
+type="file"
+id="labelInput"
+accept=".txt"
+multiple
+hidden>
+
+<script type="module" src="js/app.js"></script>
+
+</body>
+</html>

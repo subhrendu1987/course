@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+
+<title>YOLO Visualizer</title>
+
+<link rel="icon" href="assets/favicon.png">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/layout.css">
+<link rel="stylesheet" href="css/canvas.css">
+
+</head>
+
+<body>
+
+<header id="topbar">
+
+<div class="logo">
+YOLO Visualizer
+</div>
+
+<div class="toolbar">
+
+<button id="openImageBtn">
+Open Images
+</button>
+
+<button id="openLabelBtn">
+Open Labels
+</button>
+
+<button id="prevBtn">
+◀
+</button>
+
+<button id="nextBtn">
+▶
+</button>
+
+<button id="fitBtn">
+Fit
+</button>
+
+<button id="exportBtn">
+Export Preview
+</button>
+
+</div>
+
+</header>
+
+<div id="workspace">
+
+<aside id="sidebar">
+
+<input
+id="searchBox"
+type="text"
+placeholder="Search image">
+
+<ul id="imageList"></ul>
+
+</aside>
+
+<main id="viewer">
+
+<div id="imageHeader">
+
+<div id="imageName">
+
+No Image Loaded
+
+</div>
+
+<div id="labelInfo">
+
+Boxes : 0
+
+</div>
+
+</div>
+
+<div id="canvasContainer">
+
+<canvas id="viewerCanvas"></canvas>
+
+</div>
+
+</main>
+
+<aside id="infoPanel">
+
+<h3>Image Information</h3>
+
+<table>
+
+<tr>
+<td>Filename</td>
+<td id="infoFilename">-</td>
+</tr>
+
+<tr>
+<td>Resolution</td>
+<td id="infoResolution">-</td>
+</tr>
+
+<tr>
+<td>Objects</td>
+<td id="infoObjects">0</td>
+</tr>
+
+<tr>
+<td>Classes</td>
+<td id="infoClasses">Person</td>
+</tr>
+
+</table>
+
+<h3>Legend</h3>
+
+<div class="legend">
+
+<div class="legendItem">
+
+<div class="legendColor person"></div>
+
+<span>Person</span>
+
+</div>
+
+</div>
+
+</aside>
+
+</div>
+
+<footer id="statusbar">
+
+<div>
+
+Image
+
+<span id="statusImage">
+
+0 / 0
+
+</span>
+
+</div>
+
+<div>
+
+Mouse
+
+<span id="mousePosition">
+
+0,0
+
+</span>
+
+</div>
+
+<div>
+
+Zoom
+
+<span id="zoomLevel">
+
+100%
+
+</span>
+
+</div>
+
+<div>
+
+YOLO Labels
+
+<span id="labelStatus">
+
+Not Loaded
+
+</span>
+
+</div>
+
+</footer>
+
+<input
+type="file"
+id="imageInput"
+accept=".jpg,.jpeg,.png"
+multiple
+hidden>
+
+<input
+type="file"
+id="labelInput"
+accept=".txt"
+multiple
+hidden>
+
+<script type="module" src="js/visualizer.js"></script>
+
+</body>
+</html>
