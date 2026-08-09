@@ -1,15 +1,24 @@
-SPREADSHEET_URL="https://docs.google.com/spreadsheets/d/1oq-2rCEReb0AbDkTo-iDSxSh1OtY-200dhsQhj1iEuw/"
+SPREADSHEET_URL="https://docs.google.com/spreadsheets/d/1oq-2rCEReb0AbDkTo-iDSxSh1OtY-200dhsQhj1iEuw/";
+
+// Global cached spreadsheet variable to avoid repeating openByUrl calls
+var CACHED_SS = null;
 
 // Helper function to safely get the target spreadsheet
 function getTargetSpreadsheet() {
-  if (SPREADSHEET_URL) {
-    return SpreadsheetApp.openByUrl(SPREADSHEET_URL);
+  if (CACHED_SS) {
+    return CACHED_SS;
   }
-  return SpreadsheetApp.getActiveSpreadsheet();
+  if (SPREADSHEET_URL) {
+    CACHED_SS = SpreadsheetApp.openByUrl(SPREADSHEET_URL);
+  } else {
+    CACHED_SS = SpreadsheetApp.getActiveSpreadsheet();
+  }  
+  return CACHED_SS;
 }
 
 // Health-check endpoint for browser GET requests
 function doGet(e) {
+  var logBuffer = ["|=== [doGet] Request Received ===|"];
   var result = { status: "success", data: {} };
   
   try {
@@ -17,12 +26,16 @@ function doGet(e) {
     var sheet = ss.getSheetByName("Config");
     
     if (!sheet) {
+      logBuffer.push("❌ [doGet] Error: Sheet 'Config' not found.");
+      logToSheet(logBuffer.join(" | "));
       return ContentService
         .createTextOutput(JSON.stringify({ status: "error", message: "Sheet 'Config' not found." }))
         .setMimeType(ContentService.MimeType.JSON);
     }
     
     var values = sheet.getDataRange().getValues();
+    logBuffer.push("Retrieved " + values.length + " rows from 'Config' sheet.");
+    
     var availableData = {};
     
     // Skip row 0 (Headers: Date, Group, ImageUrl, MaxSerial)
@@ -45,10 +58,15 @@ function doGet(e) {
     }
     
     result.data = availableData;
+    logBuffer.push("✅ Processed dates: " + Object.keys(availableData).join(", "));
   } catch (err) {
+    logBuffer.push("❌ Exception: " + err.toString());
     result = { status: "error", message: err.toString() };
   }
   
+  // Single write call for all collated logs
+  logToSheet(logBuffer.join(" | "));
+
   return ContentService
     .createTextOutput(JSON.stringify(result))
     .setMimeType(ContentService.MimeType.JSON);
@@ -56,7 +74,18 @@ function doGet(e) {
 
 // Attendance processing endpoint for POST requests
 function doPost(e) {
+  var logBuffer = ["|=== [doPost] Request Received ===|"];
+  
   try {
+    if (!e || !e.postData || !e.postData.contents) {
+      logBuffer.push("❌ Error: No post contents received.");
+      logToSheet(logBuffer.join(" | "));
+      return ContentService
+        .createTextOutput(JSON.stringify({ status: "error", message: "No post contents received." }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    logBuffer.push("Raw Payload: " + e.postData.contents);
     var data = JSON.parse(e.postData.contents);
     
     var date = String(data.date || "").trim();
@@ -65,7 +94,11 @@ function doPost(e) {
     var rollNumber = String(data.rollNumber || "").trim();
     var serialNumberNum = parseInt(String(data.serialNumber || "").trim(), 10);
 
+    logBuffer.push("Parsed Parameters -> Date: '" + date + "', Group: '" + group + "', Email: '" + email + "', Roll: '" + rollNumber + "', Serial: " + serialNumberNum);
+
     if (!date || !group || !rollNumber || isNaN(serialNumberNum)) {
+      logBuffer.push("❌ Validation Failed: Missing or invalid required fields.");
+      logToSheet(logBuffer.join(" | "));
       return ContentService
         .createTextOutput(JSON.stringify({ status: "error", message: "Missing or invalid required fields." }))
         .setMimeType(ContentService.MimeType.JSON);
@@ -76,12 +109,15 @@ function doPost(e) {
     // 0. Verify Roll Number exists in MyGroups tab (Column E)
     var myGroupsSheet = ss.getSheetByName("MyGroups");
     if (!myGroupsSheet) {
+      logBuffer.push("❌ Error: Sheet 'MyGroups' not found.");
+      logToSheet(logBuffer.join(" | "));
       return ContentService
         .createTextOutput(JSON.stringify({ status: "error", message: "Sheet 'MyGroups' not found." }))
         .setMimeType(ContentService.MimeType.JSON);
     }
 
     var lastRowMyGroups = myGroupsSheet.getLastRow();
+    logBuffer.push("'MyGroups' last row: " + lastRowMyGroups);
     var isRollNumberValid = false;
 
     if (lastRowMyGroups >= 1) {
@@ -95,6 +131,8 @@ function doPost(e) {
     }
 
     if (!isRollNumberValid) {
+      logBuffer.push("⚠️ Roll Number validation failed: '" + rollNumber + "' not found in Column E of MyGroups.");
+      logToSheet(logBuffer.join(" | "));
       return ContentService
         .createTextOutput(JSON.stringify({
           status: "error",
@@ -102,6 +140,7 @@ function doPost(e) {
         }))
         .setMimeType(ContentService.MimeType.JSON);
     }
+    logBuffer.push("✅ Roll Number '" + rollNumber + "' verified in MyGroups.");
 
     // 1. Validate maxSerial limit from 'Config' Sheet
     var configSheet = ss.getSheetByName("Config");
@@ -121,8 +160,11 @@ function doPost(e) {
         }
       }
     }
+    logBuffer.push("Max serial limit for date '" + date + "' and group '" + group + "': " + maxSerialLimit);
 
     if (maxSerialLimit !== null && serialNumberNum > maxSerialLimit) {
+      logBuffer.push("⚠️ Conflict: Serial Number " + serialNumberNum + " exceeds maxSerialLimit (" + maxSerialLimit + ").");
+      logToSheet(logBuffer.join(" | "));
       return ContentService
         .createTextOutput(JSON.stringify({
           status: "conflict",
@@ -136,8 +178,10 @@ function doPost(e) {
     var sheet = ss.getSheetByName(sheetName);
 
     if (!sheet) {
+      logBuffer.push("Sheet '" + sheetName + "' does not exist. Creating new sheet...");
       var templateSheet = ss.getSheetByName("Template");
       if (templateSheet) {
+        logBuffer.push("Copying from 'Template' sheet.");
         sheet = templateSheet.copyTo(ss);
         sheet.setName(sheetName);
         
@@ -146,13 +190,18 @@ function doPost(e) {
           sheet.getRange(2, 1, templateLastRow - 1, sheet.getLastColumn()).clearContent();
         }
       } else {
+        logBuffer.push("'Template' sheet not found. Creating a blank sheet with default headers.");
         sheet = ss.insertSheet(sheetName);
         sheet.appendRow(["Timestamp", "Email", "Roll Number", "Serial Number"]);
       }
+    } else {
+      logBuffer.push("Found existing sheet: '" + sheetName + "'.");
     }
 
     // 3. Duplicate Checking (Roll Number & Seat Number)
     var lastRow = sheet.getLastRow();
+    logBuffer.push("Sheet '" + sheetName + "' last row: " + lastRow);
+    
     if (lastRow > 1) {
       var existingEntries = sheet.getRange(2, 1, lastRow - 1, 4).getValues();
       
@@ -161,6 +210,8 @@ function doPost(e) {
         var existingSerial = parseInt(String(existingEntries[r][3]).trim(), 10);
 
         if (existingRoll.toLowerCase() === rollNumber.toLowerCase()) {
+          logBuffer.push("⚠️ Conflict: Duplicate Roll Number detected (" + rollNumber + ").");
+          logToSheet(logBuffer.join(" | "));
           return ContentService
             .createTextOutput(JSON.stringify({
               status: "conflict",
@@ -170,6 +221,8 @@ function doPost(e) {
         }
 
         if (existingSerial === serialNumberNum) {
+          logBuffer.push("⚠️ Conflict: Duplicate Seat #" + serialNumberNum + " already claimed by Roll Number " + existingRoll + ".");
+          logToSheet(logBuffer.join(" | "));
           return ContentService
             .createTextOutput(JSON.stringify({
               status: "conflict",
@@ -183,6 +236,10 @@ function doPost(e) {
     // 4. Save Entry
     var timestamp = new Date();
     sheet.appendRow([timestamp, email, rollNumber, serialNumberNum]);
+    logBuffer.push("✅ Successfully appended attendance entry for Roll: " + rollNumber + ", Seat #" + serialNumberNum);
+
+    // Write all collated logs on success
+    logToSheet(logBuffer.join(" | "));
 
     return ContentService
       .createTextOutput(JSON.stringify({
@@ -192,6 +249,8 @@ function doPost(e) {
       .setMimeType(ContentService.MimeType.JSON);
 
   } catch (error) {
+    logBuffer.push("❌ Exception: " + error.toString());
+    logToSheet(logBuffer.join(" | "));
     return ContentService
       .createTextOutput(JSON.stringify({
         status: "error",

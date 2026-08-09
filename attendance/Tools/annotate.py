@@ -2,6 +2,7 @@ import json
 import os
 import cv2
 import config
+import tkinter as tk
 
 # ==========================================
 # 🌐 CONFIGURATION & PATH SETUP
@@ -24,14 +25,31 @@ else:
 
 # Global tracking variables
 drawing = False
+panning = False
 ix, iy = -1, -1
+pan_start_x, pan_start_y = -1, -1
+
+# Zoom and Viewport State
+zoom_scale = 1.0
+offset_x, offset_y = 0.0, 0.0
+
 temp_image = None
 current_image = None
 raw_image = None
 
+# Track window dimensions
+window_w = 800
+window_h = 600
+
 # Separate tracking lists for existing and new annotations
 existing_boxes = []  # Drawn in GREEN
 new_yolo_boxes = []  # Drawn in RED
+
+# Get monitor resolution dynamically
+root = tk.Tk()
+screen_w = root.winfo_screenwidth()
+screen_h = root.winfo_screenheight()
+root.destroy()
 
 
 def load_existing_annotations(json_path):
@@ -76,6 +94,27 @@ def yolo_to_pixels(box_str, img_w, img_h):
     return x1, y1, x2, y2
 
 
+def display_to_image_coords(win_x, win_y, img_w, img_h):
+    """Translates window/cursor coordinates to raw image pixel coordinates."""
+    global window_w, window_h, zoom_scale, offset_x, offset_y
+
+    win_w = max(1, window_w)
+    win_h = max(1, window_h)
+
+    view_w = img_w / zoom_scale
+    view_h = img_h / zoom_scale
+
+    crop_x = (win_x / win_w) * view_w
+    crop_y = (win_y / win_h) * view_h
+
+    img_x = int(offset_x + crop_x)
+    img_y = int(offset_y + crop_y)
+
+    img_x = max(0, min(img_w - 1, img_x))
+    img_y = max(0, min(img_h - 1, img_y))
+    return img_x, img_y
+
+
 def redraw_canvas():
     """Renders existing (GREEN) and newly added (RED) bounding boxes."""
     global current_image, temp_image, raw_image, existing_boxes, new_yolo_boxes
@@ -116,6 +155,26 @@ def redraw_canvas():
     temp_image = current_image.copy()
 
 
+def get_view_crop():
+    """Crops the original image according to current zoom and offset coordinates."""
+    global temp_image, zoom_scale, offset_x, offset_y
+    img_h, img_w, _ = temp_image.shape
+
+    view_w = int(img_w / zoom_scale)
+    view_h = int(img_h / zoom_scale)
+
+    x1 = int(offset_x)
+    y1 = int(offset_y)
+    x2 = min(img_w, x1 + view_w)
+    y2 = min(img_h, y1 + view_h)
+
+    cropped = temp_image[y1:y2, x1:x2]
+    if cropped.size == 0:
+        return temp_image
+
+    return cropped
+
+
 def handle_right_click_delete(click_x, click_y):
     """Deletes a bounding box if right-clicked inside its bounds."""
     global existing_boxes, new_yolo_boxes, current_image
@@ -141,31 +200,76 @@ def handle_right_click_delete(click_x, click_y):
             return
 
 
-def draw_mouse_bbox(event, x, y, flags, param):
-    """Mouse callback to handle click-and-drag drawing and right-click deletion."""
-    global ix, iy, drawing, temp_image, current_image, new_yolo_boxes
+def draw_mouse_bbox(event, win_x, win_y, flags, param):
+    """Handles mouse events for drawing, middle-click panning, zooming, and deletion."""
+    global ix, iy, drawing, panning, pan_start_x, pan_start_y
+    global zoom_scale, offset_x, offset_y, temp_image, current_image, new_yolo_boxes
 
     img_h, img_w, _ = current_image.shape
+    img_x, img_y = display_to_image_coords(win_x, win_y, img_w, img_h)
 
-    # 🟢 Left Click: Start Box
-    if event == cv2.EVENT_LBUTTONDOWN:
+    # 🔍 Scroll Wheel: Zoom In / Zoom Out
+    if event == cv2.EVENT_MOUSEWHEEL:
+        old_zoom = zoom_scale
+        if flags > 0:
+            zoom_scale = min(10.0, zoom_scale * 1.25)
+        else:
+            zoom_scale = max(1.0, zoom_scale / 1.25)
+
+        if zoom_scale == 1.0:
+            offset_x, offset_y = 0.0, 0.0
+        else:
+            view_w_old = img_w / old_zoom
+            view_h_old = img_h / old_zoom
+            view_w_new = img_w / zoom_scale
+            view_h_new = img_h / zoom_scale
+
+            rel_x = win_x / max(1, window_w)
+            rel_y = win_y / max(1, window_h)
+
+            offset_x += (view_w_old - view_w_new) * rel_x
+            offset_y += (view_h_old - view_h_new) * rel_y
+
+            offset_x = max(0, min(img_w - view_w_new, offset_x))
+            offset_y = max(0, min(img_h - view_h_new, offset_y))
+
+    # 🖐️ Middle Click Down: Start Pan
+    elif event == cv2.EVENT_MBUTTONDOWN:
+        panning = True
+        pan_start_x, pan_start_y = win_x, win_y
+
+    # 🟢 Left Click Down: Start Box Draw
+    elif event == cv2.EVENT_LBUTTONDOWN:
         drawing = True
-        ix, iy = x, y
+        ix, iy = img_x, img_y
 
-    # 🟡 Drag: Draw Preview Box
+    # 🟡 Mouse Move
     elif event == cv2.EVENT_MOUSEMOVE:
-        if drawing:
-            temp_image = current_image.copy()
-            cv2.rectangle(temp_image, (ix, iy), (x, y), (0, 0, 255), 2)
+        if panning:
+            dx = (win_x - pan_start_x) * (img_w / zoom_scale) / max(1, window_w)
+            dy = (win_y - pan_start_y) * (img_h / zoom_scale) / max(1, window_h)
 
-    # 🔴 Left Release: Commit Box
+            offset_x = max(0, min(img_w - (img_w / zoom_scale), offset_x - dx))
+            offset_y = max(0, min(img_h - (img_h / zoom_scale), offset_y - dy))
+
+            pan_start_x, pan_start_y = win_x, win_y
+
+        elif drawing:
+            temp_image = current_image.copy()
+            cv2.rectangle(temp_image, (ix, iy), (img_x, img_y), (0, 0, 255), 2)
+
+    # 🖐️ Middle Click Up: Stop Pan
+    elif event == cv2.EVENT_MBUTTONUP:
+        panning = False
+
+    # 🔴 Left Release: Commit Box Draw
     elif event == cv2.EVENT_LBUTTONUP:
         if drawing:
             drawing = False
-            x1, y1 = min(ix, x), min(iy, y)
-            x2, y2 = max(ix, x), max(iy, y)
+            x1, y1 = min(ix, img_x), min(iy, img_y)
+            x2, y2 = max(ix, img_x), max(iy, img_y)
 
-            if (x2 - x1) > 5 and (y2 - y1) > 5:
+            if (x2 - x1) > 3 and (y2 - y1) > 3:
                 width = (x2 - x1) / img_w
                 height = (y2 - y1) / img_h
                 x_center = (x1 + (x2 - x1) / 2) / img_w
@@ -179,11 +283,12 @@ def draw_mouse_bbox(event, x, y, flags, param):
 
     # 🔴 Right Click: Delete Box under cursor
     elif event == cv2.EVENT_RBUTTONDOWN:
-        handle_right_click_delete(x, y)
+        handle_right_click_delete(img_x, img_y)
 
 
 def run_interactive_annotator():
     global current_image, temp_image, raw_image, existing_boxes, new_yolo_boxes
+    global zoom_scale, offset_x, offset_y, window_w, window_h
 
     # 1. Read Input Image
     raw_image = cv2.imread(FULL_IMAGE_PATH)
@@ -200,21 +305,40 @@ def run_interactive_annotator():
     # 3. GUI Controls Setup
     window_name = f"Annotator | 'S': Save | Right-Click: Delete | 'Z': Undo | 'Q': Quit"
     cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
+
+    # Set window bounds
+    window_w = screen_w
+    window_h = screen_h - 70
+    cv2.resizeWindow(window_name, window_w, window_h)
+
     cv2.setMouseCallback(window_name, draw_mouse_bbox)
 
     print("\n" + "=" * 50)
     print(" 🖱️ INTERACTIVE ANNOTATOR CONTROLS")
     print("=" * 50)
-    print("• Left-Click & Drag : Draw a new box (RED)")
-    print("• Right-Click Box   : Delete box under cursor")
-    print("• Press 'Z'         : Undo last drawn box")
-    print("• Press 'R'         : Reset newly added boxes")
-    print("• Press 'S'         : Save changes to JSON file")
-    print("• Press 'Q' or ESC  : Exit without saving\n")
+    print("• Left-Click & Drag        : Draw a new box (RED)")
+    print("• Mouse Scroll Wheel       : Zoom in / Zoom out")
+    print("• Middle-Click & Drag      : Pan across zoomed image")
+    print("• Press '0'                : Reset Zoom & Viewport")
+    print("• Right-Click Box          : Delete box under cursor")
+    print("• Press 'Z'                : Undo last drawn box")
+    print("• Press 'R'                : Reset newly added boxes")
+    print("• Press 'S'                : Save changes to JSON file")
+    print("• Press 'Q' or ESC         : Exit without saving\n")
 
     while True:
-        cv2.imshow(window_name, temp_image)
+        display_frame = get_view_crop()
+        cv2.imshow(window_name, display_frame)
+
         key = cv2.waitKey(20) & 0xFF
+
+        # Detect window resize dynamically
+        try:
+            rect = cv2.getWindowImageRect(window_name)
+            if rect[2] > 0 and rect[3] > 0:
+                window_w, window_h = rect[2], rect[3]
+        except Exception:
+            pass
 
         # Save Changes ('S')
         if key in (ord("s"), ord("S")):
@@ -227,6 +351,12 @@ def run_interactive_annotator():
             print(f"\n✅ SUCCESS! Updated file: '{FULL_ANNOTATION_PATH}'")
             print(f"   └─ Total Saved Annotations: {len(all_annotations)}")
             break
+
+        # Reset Zoom View ('0')
+        elif key in (ord("0"),):
+            zoom_scale = 1.0
+            offset_x, offset_y = 0.0, 0.0
+            print("🔍 Reset zoom and view position.")
 
         # Undo Last Addition ('Z')
         elif key in (ord("z"), ord("Z")):

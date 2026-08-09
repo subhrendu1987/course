@@ -5,7 +5,7 @@
 * Open app script (e.g. `Extensions` -> `Apps Script`). Provide a meaningful project name as per your wish.
 * Edit `Code.gs` and update it with `Gdrive/Code.gs`. Now link it with the spread sheet created by following the steps below.
 	- Edit Line -1 of `Code.gs` (e.g. `SPREADSHEET_URL="https://docs.google.com/spreadsheets/d/1PAFVJikqdhM7u5Cd6Jv89m_uURquVX8w6rEjXRxn7u8/"`) with the URL of your spreadsheet. Ignore the `gid`/`edit` like tags from the URL.
-* From `Files Menu` of App Script editor create a separate script file named `functions.gs` and update with the code from `Gdrive/functions.gs`
+* From `Files Menu` of App Script editor create a separate script file named `functions.gs` and `logger.gs`. Update those scripts with the code from `Gdrive/functions.gs` and `Gdrive/logger.gs`
 
 * Deploy the app as WEBAPP
 	- In `App Script` editor interface, find *`Deploy`* button and create a new deployment. Find `Gear` icon to create a `Web app`. Fill `Description` -> `Attendance`, `Execute as` -> `me`, `Who has access` -> `Anyone`. Provide necessary permissions by following the instructions on screen.
@@ -50,21 +50,27 @@ Create Annotations for the attached picture in yolo annotations in json. In the 
 ### Generate Annotated Picture
 * Move to `Tools` folder `$ cd Tools/`
 * Execute `python3 driver.py -f 31_07_2026_2C7`
+* Run `python visualizer.py -f <filename>`
+* The tool shortcuts are as follows.
+	- Save annotations by pressing `s`
+	- Quit without saving by pressing `q` or ESC
+	- Undo one by one by pressing `z`
+	- Reset newly added boxes by pressing `r`
+* Use cleanup script to order the boxes based on coordinate by pressing "y", otherwise press "N".
 
-
-* Run 
-```
-python visualizer.py -f <filename>
-```
+## To use the functionalities separately
+### Preview image
 * Check if it requires further editing or not by going to `Dataset/Preview/`
 ### Annotate
-* Open 
-```
-python3 annotate.py -f <filename> 
-```
+* Execute `python3 annotate.py -f <filename>`
 * Add missing students by drawing bounding boxes around the faces.
 * Remove boxes by right-clicking on the box followed by left click on the same.
-* Save annotations by pressing `s` 
+* The tool shortcuts are as follows.
+	- Save annotations by pressing `s`
+	- Quit without saving by pressing `q` or ESC
+	- Undo one by one by pressing `z`
+	- Reset newly added boxes by pressing `r`
+ 
 ### CleanUp annotation
 * Cleanup and arrange the boxes in a particular order
 ```
