@@ -6,6 +6,19 @@
 	- Edit Line -1 of `Code.gs` (e.g. `SPREADSHEET_URL="https://docs.google.com/spreadsheets/d/1PAFVJikqdhM7u5Cd6Jv89m_uURquVX8w6rEjXRxn7u8/"`) with the URL of your spreadsheet. Ignore the `gid`/`edit` like tags from the URL.
 * From `Files Menu` of App Script editor create a separate script file named `functions.gs` and update with the code from `Gdrive/functions.gs`
 
+* Deploy the app as WEBAPP
+	- In `App Script` editor interface, find *`Deploy`* button and create a new deployment. Find `Gear` icon to create a `Web app`. Fill `Description` -> `Attendance`, `Execute as` -> `me`, `Who has access` -> `Anyone`. Provide necessary permissions by following the instructions on screen.
+	- Once deployed, copy the `Web app URL`. We'll call it as `<WEBAPP_URL>` 
+	- ```WEBAPP_URL = https://script.google.com/macros/s/AKfycbz2EW21MpNZ9Y8kV3WytbpQWyl88Gz3Q869yxEuXjjXz_MwK5vUzCFYIDj8vrdWiU2L/exec```
+* Test
+	
+	- ```curl -sL "<WEBAPP_URL>"``` Provides `Config` Parameters in `JSON` format
+	- ```curl -sL -H "Content-Type: text/plain;charset=utf-8" -d '{"date":"03_08_2026","group":"2C7","email":"teststudent@example.com","rollNumber":"102103001","serialNumber":"12"}' "<WEBAPP_URL>"```
+	- ```curl -sL -H "User-Agent: Terminal" "https://api.github.com/repos/suchat-subho/course/contents/attendance/Dataset/Preview" | jq -r '["Date","Group","ImageUrl"],(.[]|select(.name|test("\\.(jpg|png)$";"i"))|[.name[0:10], .name[11:-4], .download_url])|@tsv'```	
+* 
+* 
+
+
 
 ## How to use?
 Take (panoromic) picture and keep it in `Dataset/RawPicture/` with the date and class name (e.g. `02_08_2026_2C7.jpg`). Following the given workflow to generate the student count.
