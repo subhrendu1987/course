@@ -1,7 +1,7 @@
 # Student Attendance system
 ## Initial Setup
 * Fork the project and enable `Git pages`. Identify the URL of the Git pages, which will be called as `<ATTENDANCE_URL>` henceforth.
-* Upload `Gdrive/AttendanceSystem.xlsx` in your Google Drive and save it as Google sheet (e.g. `File` -> `Save as Google Sheets`)
+* Upload `Gdrive/AttendanceSystem.xlsx` in your Google Drive and save it as Google sheet (e.g. `File` -> `Save as Google Sheets`). We'll refer to this Sheet as `SPREADSHEET`
 * Open app script (e.g. `Extensions` -> `Apps Script`). Provide a meaningful project name as per your wish.
 * Edit `Code.gs` and update it with `Gdrive/Code.gs`. Now link it with the spread sheet created by following the steps below.
 	- Edit Line -1 of `Code.gs` (e.g. `SPREADSHEET_URL="https://docs.google.com/spreadsheets/d/1PAFVJikqdhM7u5Cd6Jv89m_uURquVX8w6rEjXRxn7u8/"`) with the URL of your spreadsheet. Ignore the `gid`/`edit` like tags from the URL.
@@ -17,16 +17,34 @@
 	- ```curl -sL -H "Content-Type: text/plain;charset=utf-8" -d '{"date":"03_08_2026","group":"2C7","email":"teststudent@example.com","rollNumber":"102103001","serialNumber":"12"}' "$WEBAPP_URL"```
 ### Link the Backend with FrontEnd
 * In line-2 of `./script.js` update the `<WEBAPP_URL>`. (e.g. `const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz2EW21MpNZ9Y8kV3WytbpQWyl88Gz3Q869yxEuXjjXz_MwK5vUzCFYIDj8vrdWiU2L/exec";`)
-* Git commit and push the changes. After sometime, open `<ATTENDANCE_URL>` and see the dates, classes and size in the page showing proper values as given in `config` tab of the SPREADSHEET. Additionaly, clear local cache also.
+* Git commit and push the changes. After sometime, open `<ATTENDANCE_URL>` and see the dates, classes and size in the page showing proper values as given in `config` tab of the `SPREADSHEET`. Additionaly, clear local cache also.
 
 # How to use?
-Take (panoromic) picture and keep it in `Dataset/RawPicture/` with the date and class name (e.g. `02_08_2026_2C7.jpg`). Following the given workflow to generate the student count. Once the annotation is done, add relevant data in `config` tab of SPREADSHEET. 
+Take (panoromic) picture and keep it in `Dataset/RawPicture/` with the date and class name (e.g. `02_08_2026_2C7.jpg`). At present the tool only works for `jpg` extensions. Following the given workflow to generate the student count. Once the annotation is done, add relevant data in `config` tab of `SPREADSHEET`. 
 
 ## Generate Image annotations
 ### Heavy lifting
 * Use Gemini/ChatGPT to generate annotaions in `.json` format. Use the following prompt for the same.
 ```
-Create Annotations for the attached picture in yolo annotations in json. In the picture students are seating in a classroom. I want to get the head count with serial number of the students. Only use bounding boxes to identify the student heads. Add occluded students also
+Create Annotations for the attached picture in yolo annotations in json. In the picture students are seating in a classroom. I want to get the head count with serial number of the students. Only use bounding boxes to identify the student heads. Add occluded students also. The sample output format is \`\`\` [
+  "0 0.1230 0.2786 0.0135 0.0012",
+  "0 0.1280 0.2354 0.0092 0.0008",
+  "0 0.1305 0.2628 0.0162 0.0006",
+  "0 0.1530 0.2801 0.0123 0.0010",
+  "0 0.1600 0.2354 0.0092 0.0008",
+  "0 0.1603 0.2609 0.0121 0.0007",
+  "0 0.1950 0.2354 0.0092 0.0008",
+  "0 0.1980 0.2661 0.0123 0.0010",
+  "0 0.2202 0.2217 0.0077 0.0012",
+  "0 0.2290 0.2800 0.0146 0.0024",
+  "0 0.2292 0.2498 0.0100 0.0026",
+  "0 0.3800 0.2844 0.0110 0.0009",
+  "0 0.4378 0.2829 0.0099 0.0009",
+  "0 0.4569 0.2840 0.0059 0.0008",
+  "0 0.4723 0.2902 0.0067 0.0012",
+  "0 0.4876 0.2842 0.0059 0.0013",
+  "0 0.5099 0.2902 0.0070 0.0011"
+]\`\`\`
 ```
 * Save the `.json` file in the `Dataset/Annotated/` folder with the same name as the image.
 ### Generate Annotated Picture
