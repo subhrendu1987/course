@@ -1,4 +1,4 @@
-SPREADSHEET_URL="https://docs.google.com/spreadsheets/d/1oq-2rCEReb0AbDkTo-iDSxSh1OtY-200dhsQhj1iEuw/";
+SPREADSHEET_URL="https://docs.google.com/spreadsheets/d/1PAFVJikqdhM7u5Cd6Jv89m_uURquVX8w6rEjXRxn7u8/"
 
 // Global cached spreadsheet variable to avoid repeating openByUrl calls
 var CACHED_SS = null;
@@ -27,7 +27,7 @@ function doGet(e) {
     
     if (!sheet) {
       logBuffer.push("❌ [doGet] Error: Sheet 'Config' not found.");
-      logToSheet(logBuffer.join(" | "));
+      logToSheet(logBuffer.join(" \n "));
       return ContentService
         .createTextOutput(JSON.stringify({ status: "error", message: "Sheet 'Config' not found." }))
         .setMimeType(ContentService.MimeType.JSON);
@@ -58,14 +58,14 @@ function doGet(e) {
     }
     
     result.data = availableData;
-    logBuffer.push("✅ Processed dates: " + Object.keys(availableData).join(", "));
+    logBuffer.push("✅ Processed dates: [" + Object.keys(availableData).join(", ")+"]");
   } catch (err) {
     logBuffer.push("❌ Exception: " + err.toString());
     result = { status: "error", message: err.toString() };
   }
   
   // Single write call for all collated logs
-  logToSheet(logBuffer.join(" | "));
+  logToSheet(logBuffer.join(" \n "));
 
   return ContentService
     .createTextOutput(JSON.stringify(result))
@@ -79,7 +79,7 @@ function doPost(e) {
   try {
     if (!e || !e.postData || !e.postData.contents) {
       logBuffer.push("❌ Error: No post contents received.");
-      logToSheet(logBuffer.join(" | "));
+      logToSheet(logBuffer.join(" \n "));
       return ContentService
         .createTextOutput(JSON.stringify({ status: "error", message: "No post contents received." }))
         .setMimeType(ContentService.MimeType.JSON);
@@ -98,7 +98,7 @@ function doPost(e) {
 
     if (!date || !group || !rollNumber || isNaN(serialNumberNum)) {
       logBuffer.push("❌ Validation Failed: Missing or invalid required fields.");
-      logToSheet(logBuffer.join(" | "));
+      logToSheet(logBuffer.join(" \n "));
       return ContentService
         .createTextOutput(JSON.stringify({ status: "error", message: "Missing or invalid required fields." }))
         .setMimeType(ContentService.MimeType.JSON);
@@ -110,7 +110,7 @@ function doPost(e) {
     var myGroupsSheet = ss.getSheetByName("MyGroups");
     if (!myGroupsSheet) {
       logBuffer.push("❌ Error: Sheet 'MyGroups' not found.");
-      logToSheet(logBuffer.join(" | "));
+      logToSheet(logBuffer.join(" \n "));
       return ContentService
         .createTextOutput(JSON.stringify({ status: "error", message: "Sheet 'MyGroups' not found." }))
         .setMimeType(ContentService.MimeType.JSON);
@@ -132,7 +132,7 @@ function doPost(e) {
 
     if (!isRollNumberValid) {
       logBuffer.push("⚠️ Roll Number validation failed: '" + rollNumber + "' not found in Column E of MyGroups.");
-      logToSheet(logBuffer.join(" | "));
+      logToSheet(logBuffer.join(" \n "));
       return ContentService
         .createTextOutput(JSON.stringify({
           status: "error",
@@ -164,7 +164,7 @@ function doPost(e) {
 
     if (maxSerialLimit !== null && serialNumberNum > maxSerialLimit) {
       logBuffer.push("⚠️ Conflict: Serial Number " + serialNumberNum + " exceeds maxSerialLimit (" + maxSerialLimit + ").");
-      logToSheet(logBuffer.join(" | "));
+      logToSheet(logBuffer.join(" \n "));
       return ContentService
         .createTextOutput(JSON.stringify({
           status: "conflict",
@@ -211,7 +211,7 @@ function doPost(e) {
 
         if (existingRoll.toLowerCase() === rollNumber.toLowerCase()) {
           logBuffer.push("⚠️ Conflict: Duplicate Roll Number detected (" + rollNumber + ").");
-          logToSheet(logBuffer.join(" | "));
+          logToSheet(logBuffer.join(" \n "));
           return ContentService
             .createTextOutput(JSON.stringify({
               status: "conflict",
@@ -222,7 +222,7 @@ function doPost(e) {
 
         if (existingSerial === serialNumberNum) {
           logBuffer.push("⚠️ Conflict: Duplicate Seat #" + serialNumberNum + " already claimed by Roll Number " + existingRoll + ".");
-          logToSheet(logBuffer.join(" | "));
+          logToSheet(logBuffer.join(" \n "));
           return ContentService
             .createTextOutput(JSON.stringify({
               status: "conflict",
@@ -239,7 +239,7 @@ function doPost(e) {
     logBuffer.push("✅ Successfully appended attendance entry for Roll: " + rollNumber + ", Seat #" + serialNumberNum);
 
     // Write all collated logs on success
-    logToSheet(logBuffer.join(" | "));
+    logToSheet(logBuffer.join(" \n "));
 
     return ContentService
       .createTextOutput(JSON.stringify({
@@ -250,7 +250,7 @@ function doPost(e) {
 
   } catch (error) {
     logBuffer.push("❌ Exception: " + error.toString());
-    logToSheet(logBuffer.join(" | "));
+    logToSheet(logBuffer.join(" \n "));
     return ContentService
       .createTextOutput(JSON.stringify({
         status: "error",
