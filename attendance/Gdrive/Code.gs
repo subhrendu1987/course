@@ -18,7 +18,7 @@ function getTargetSpreadsheet() {
 
 // Health-check endpoint for browser GET requests
 function doGet(e) {
-  var logBuffer = ["|=== [doGet] Request Received ===|"];
+  var logBuffer = ["|=== [doGet] Request Received ===|\n"];
   var result = { status: "success", data: {} };
   
   try {
@@ -58,7 +58,7 @@ function doGet(e) {
     }
     
     result.data = availableData;
-    logBuffer.push("✅ Processed dates: [" + Object.keys(availableData).join(", ")+"]");
+    logBuffer.push("✅ Processed dates: " + Object.keys(availableData).join(", "));
   } catch (err) {
     logBuffer.push("❌ Exception: " + err.toString());
     result = { status: "error", message: err.toString() };
@@ -74,7 +74,7 @@ function doGet(e) {
 
 // Attendance processing endpoint for POST requests
 function doPost(e) {
-  var logBuffer = ["|=== [doPost] Request Received ===|"];
+  var logBuffer = ["|=== [doPost] Request Received ===|\n"];
   
   try {
     if (!e || !e.postData || !e.postData.contents) {
@@ -234,7 +234,8 @@ function doPost(e) {
     }
 
     // 4. Save Entry
-    var timestamp = new Date();
+    //var timestamp = new Date();
+    var timestamp = Utilities.formatDate(new Date(), "Asia/Kolkata", "yyyy-MM-dd HH:mm:ss");
     sheet.appendRow([timestamp, email, rollNumber, serialNumberNum]);
     logBuffer.push("✅ Successfully appended attendance entry for Roll: " + rollNumber + ", Seat #" + serialNumberNum);
 
