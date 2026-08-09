@@ -14,9 +14,9 @@ DEFAULT_IMAGE_NAME = "test_2C4"
 # Directory Paths
 IMAGE_PATH = "../Dataset/RawPicture/"
 ANNOTATION_PATH = "../Dataset/Annotated/"
-AUGMENTED_IMAGE_PATH = "Dataset/Augmented/Images/"
-AUGMENTED_ANNOTATION_PATH = "Dataset/Augmented/"
-PREVIEW_PATH="Dataset/Preview/"
+AUGMENTED_IMAGE_PATH = "../Dataset/Augmented/Images/"
+AUGMENTED_ANNOTATION_PATH = "../Dataset/Augmented/"
+PREVIEW_PATH="../Dataset/Preview/"
 
 # Default Target File
 IMAGE_EXTN = ".jpg"
