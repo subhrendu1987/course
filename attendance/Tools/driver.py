@@ -6,7 +6,6 @@ import config
 import visualizer
 import annotate
 import cleanup
-from pathlib import Path
 
 
 def print_banner(step_num, title):
@@ -32,10 +31,6 @@ def run_pipeline():
     if not os.path.exists(image_path):
         print(f"\n❌ Error: Raw image file not found at '{image_path}'.")
         print("Please check your file paths or specify a valid file with -f / --file.")
-        print("Available files:")
-        folder = Path(image_path).parent
-        files = [file.stem for file in folder.iterdir() if file.is_file()]
-        print(files)
         sys.exit(1)
 
     # ---------------------------------------------------------
