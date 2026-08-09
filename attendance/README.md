@@ -9,14 +9,13 @@
 * Deploy the app as WEBAPP
 	- In `App Script` editor interface, find *`Deploy`* button and create a new deployment. Find `Gear` icon to create a `Web app`. Fill `Description` -> `Attendance`, `Execute as` -> `me`, `Who has access` -> `Anyone`. Provide necessary permissions by following the instructions on screen.
 	- Once deployed, copy the `Web app URL`. We'll call it as `<WEBAPP_URL>` 
-	- ```WEBAPP_URL = https://script.google.com/macros/s/AKfycbz2EW21MpNZ9Y8kV3WytbpQWyl88Gz3Q869yxEuXjjXz_MwK5vUzCFYIDj8vrdWiU2L/exec```
+	- ```WEBAPP_URL="https://script.google.com/macros/s/AKfycbz2EW21MpNZ9Y8kV3WytbpQWyl88Gz3Q869yxEuXjjXz_MwK5vUzCFYIDj8vrdWiU2L/exec"```
 * Test
 	
-	- ```curl -sL "<WEBAPP_URL>"``` Provides `Config` Parameters in `JSON` format
-	- ```curl -sL -H "Content-Type: text/plain;charset=utf-8" -d '{"date":"03_08_2026","group":"2C7","email":"teststudent@example.com","rollNumber":"102103001","serialNumber":"12"}' "<WEBAPP_URL>"```
-	- ```curl -sL -H "User-Agent: Terminal" "https://api.github.com/repos/suchat-subho/course/contents/attendance/Dataset/Preview" | jq -r '["Date","Group","ImageUrl"],(.[]|select(.name|test("\\.(jpg|png)$";"i"))|[.name[0:10], .name[11:-4], .download_url])|@tsv'```	
-* 
-* 
+	- ```curl -sL "$WEBAPP_URL"``` Provides `Config` Parameters in `JSON` format
+	- ```curl -sL -H "Content-Type: text/plain;charset=utf-8" -d '{"date":"03_08_2026","group":"2C7","email":"teststudent@example.com","rollNumber":"102103001","serialNumber":"12"}' "$WEBAPP_URL"```
+### Link the Backend with FrontEnd
+* In line-2 of `./script.js` update the `<WEBAPP_URL>`. (e.g. `const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz2EW21MpNZ9Y8kV3WytbpQWyl88Gz3Q869yxEuXjjXz_MwK5vUzCFYIDj8vrdWiU2L/exec";`)
 
 
 
