@@ -30,6 +30,7 @@ Create Annotations for the attached picture in yolo annotations in json. In the 
 ```
 * Save the `.json` file in the `Dataset/Annotated/` folder with the same name as the image.
 ### Generate Annotated Picture
+* Move to `Tools` folder `$ cd Tools/`
 * Execute `python3 driver.py -f 31_07_2026_2C7`
 
 
