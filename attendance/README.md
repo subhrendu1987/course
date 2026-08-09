@@ -15,7 +15,7 @@
 	
 	- ```curl -sL "$WEBAPP_URL"``` Provides `Config` Parameters in `JSON` format
 	- ```curl -sL -H "Content-Type: text/plain;charset=utf-8" -d '{"date":"03_08_2026","group":"2C7","email":"teststudent@example.com","rollNumber":"102103001","serialNumber":"12"}' "$WEBAPP_URL"```
-	- ```curl -sL -H "Content-Type: text/plain;charset=utf-8" -d '{"date":"test","group":"2C4","email":"abc@thapar.edu","rollNumber":"1025031041","serialNumber":"20"}' "$WEBAPP_URL"```
+	- ```curl -sL -H "Content-Type: text/plain;charset=utf-8" -d '{"date":"test","group":"2C4","email":"teststudent@example.com","rollNumber":"1025031041","serialNumber":"20"}' "$WEBAPP_URL"```
 ### Link the Backend with FrontEnd
 * In line-2 of `./script.js` update the `<WEBAPP_URL>`. (e.g. `const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz2EW21MpNZ9Y8kV3WytbpQWyl88Gz3Q869yxEuXjjXz_MwK5vUzCFYIDj8vrdWiU2L/exec";`)
 * Git commit and push the changes. After sometime, open `<ATTENDANCE_URL>` and see the dates, classes and size in the page showing proper values as given in `config` tab of the `SPREADSHEET`. Additionaly, clear local cache also.
