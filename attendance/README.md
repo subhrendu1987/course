@@ -25,8 +25,8 @@ Take (panoromic) picture and keep it in `Dataset/RawPicture/` with the date and 
 ## Generate Image annotations
 ### Heavy lifting
 * Use Gemini/ChatGPT to generate annotaions in `.json` format. Use the following prompt for the same.
-```
-Create Annotations for the attached picture in yolo annotations in json. In the picture students are seating in a classroom. I want to get the head count with serial number of the students. Only use bounding boxes to identify the student heads. Add occluded students also. The sample output format is \`\`\` [
+````
+Create Annotations for the attached picture in yolo annotations in json. In the picture students are seating in a classroom. I want to get the head count with serial number of the students. Only use bounding boxes to identify the student heads. Add occluded students also. The sample output format is ``` [
   "0 0.1230 0.2786 0.0135 0.0012",
   "0 0.1280 0.2354 0.0092 0.0008",
   "0 0.1305 0.2628 0.0162 0.0006",
@@ -44,8 +44,8 @@ Create Annotations for the attached picture in yolo annotations in json. In the 
   "0 0.4723 0.2902 0.0067 0.0012",
   "0 0.4876 0.2842 0.0059 0.0013",
   "0 0.5099 0.2902 0.0070 0.0011"
-]\`\`\`
-```
+]```
+````
 * Save the `.json` file in the `Dataset/Annotated/` folder with the same name as the image.
 ### Generate Annotated Picture
 * Move to `Tools` folder `$ cd Tools/`
