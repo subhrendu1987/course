@@ -1,4 +1,7 @@
 # Student Attendance system
+## Live demo
+https://subhrendu1987.github.io/course/attendance/
+
 ## Initial Setup
 * Fork the project and enable `Git pages`. Identify the URL of the Git pages, which will be called as `<ATTENDANCE_URL>` henceforth.
 * Upload `Gdrive/AttendanceSystem.xlsx` in your Google Drive and save it as Google sheet (e.g. `File` -> `Save as Google Sheets`). We'll refer to this Sheet as `SPREADSHEET`
