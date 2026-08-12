@@ -54,7 +54,6 @@ function validateRequest(request) {
   if (!request.roll) {
     return {valid: false,message: "Roll Number is required."};
   }
-
   if (isNaN(request.serial) || request.serial <= 0) {
     return {valid: false,message: "Serial Number must be a positive number."};
   }
