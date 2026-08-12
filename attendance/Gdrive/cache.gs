@@ -32,7 +32,7 @@ function getClassConfigurations() {
     });
   }
 
-  cache.put(cacheKey, JSON.stringify(data), 600);
+  cache.put(cacheKey, JSON.stringify(data), 3600);
 
   return data;
 }
@@ -57,7 +57,7 @@ function verifyRollNumber(ss, roll) {
       .filter(function(value) {
         return value !== "";
       });
-    cache.put("VALID_ROLLS",JSON.stringify(rolls),600);
+    cache.put("VALID_ROLLS",JSON.stringify(rolls),3600);
   }
   return rolls.indexOf(roll.toLowerCase()) !== -1;
 }
@@ -72,7 +72,7 @@ function getClassConfig(ss, date, group) {
     configs = JSON.parse(cached);
   } else {
     configs = loadClassConfigurations(ss);
-    cache.put("CLASS_CONFIG", JSON.stringify(configs), 600);
+    cache.put("CLASS_CONFIG", JSON.stringify(configs), 3600);
   }
   var key = date + "|" + group;
   return configs[key] || null;

@@ -7,16 +7,6 @@
 // ============================================================
 var CACHED_SS = null;
 // ============================================================
-// SPREADSHEET
-// ============================================================
-function getTargetSpreadsheet() {
-  if (CACHED_SS) return CACHED_SS;
-  CACHED_SS = SPREADSHEET_URL
-    ? SpreadsheetApp.openByUrl(SPREADSHEET_URL)
-    : SpreadsheetApp.getActiveSpreadsheet();
-  return CACHED_SS;
-}
-// ============================================================
 // GET
 // ============================================================
 function doGet() {

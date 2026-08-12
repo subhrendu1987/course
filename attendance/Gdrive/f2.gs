@@ -9,21 +9,6 @@ function getRequiredSheet(ss, sheetName) {
   return sheet;
 }
 // ============================================================
-// ROLL NUMBER VALIDATION
-// ============================================================
-function verifyRollNumber(ss, roll) {
-  var sheet = getRequiredSheet(ss,MYGROUPS_SHEET_NAME);
-  var lastRow = sheet.getLastRow();
-  if (lastRow < 1) return false;
-  var values = sheet.getRange(1,MYGROUPS_ROLL_COLUMN,lastRow,1).getValues();
-  var target = roll.toLowerCase();
-  for (var i = 0; i < values.length; i++) {
-    var current = String(values[i][0] || "").trim().toLowerCase();
-    if (current === target) return true;
-  }
-  return false;
-}
-// ============================================================
 // REQUEST PARSING
 // ============================================================
 function parseRequest(e) {

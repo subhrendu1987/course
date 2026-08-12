@@ -11,7 +11,7 @@ function logToSheet(message) {
       logSheet.setColumnWidth(1, 150);
       logSheet.setColumnWidth(2, 600);
     }
-    var timestamp = Utilities.formatDate(new Date(), "Asia/Kolkata", "yyyy-MM-dd HH:mm:ss");
+    var timestamp = Utilities.formatDate(new Date(), TIME_ZONE, "yyyy-MM-dd HH:mm:ss");
     logSheet.appendRow([timestamp, safeMessage]);
   } catch (err) {
     console.error("🚨 logToSheet Failed: " + err.toString());

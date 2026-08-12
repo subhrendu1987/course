@@ -45,39 +45,6 @@ function normalizeDate(value) {
   return isNaN(d.getTime()) ? s : Utilities.formatDate(d, TIME_ZONE, DATE_FORMAT);
 }
 // ============================================================
-// GET CONFIGURATION DATA
-// ============================================================
-function getClassConfigurations() {
-  var ss = getTargetSpreadsheet();
-  var sheet = getRequiredSheet(ss, CONFIG_SHEET_NAME);
-  var values = sheet.getDataRange().getValues();
-  var data = {};
-  for (var i = 1; i < values.length; i++) {
-    var date = normalizeDate(values[i][CONFIG_DATE_COLUMN - 1]);
-    var group = String(values[i][CONFIG_GROUP_COLUMN - 1] || "").trim();
-    var imageUrl = String(values[i][CONFIG_IMAGE_URL_COLUMN - 1] || "").trim();
-    var maxSerial = parseInt(values[i][CONFIG_MAX_SERIAL_COLUMN - 1], 10);
-    if (!date || !group || date === "Date") continue;
-    if (!data[date]) data[date] = [];
-    data[date].push({
-      group: group,
-      imageUrl: imageUrl,
-      maxSerial: isNaN(maxSerial) ? null : maxSerial
-    });
-  }
-  return data;
-}
-// ============================================================
-// SHEET ACCESS
-// ============================================================
-function getRequiredSheet(ss, sheetName) {
-  var sheet = ss.getSheetByName(sheetName);
-  if (!sheet) {
-    throw new Error("Sheet '" + sheetName + "' not found.");
-  }
-  return sheet;
-}
-// ============================================================
 // DUPLICATE CHECK
 // ============================================================
 function checkDuplicate(sheet, roll, serial) {
@@ -135,28 +102,6 @@ function clearAttendanceData(sheet) {
   if (lastRow < ATTENDANCE_START_ROW) return;
   var rowCount = lastRow - ATTENDANCE_START_ROW + 1;
   sheet.getRange(ATTENDANCE_START_ROW, 1, rowCount, sheet.getLastColumn()).clearContent();
-}
-// ============================================================
-// CLASS CONFIGURATION
-// ============================================================
-function getClassConfig(ss, date, group) {
-  var sheet = getRequiredSheet(ss, CONFIG_SHEET_NAME);
-  var values = sheet.getDataRange().getValues();
-  for (var i = 1; i < values.length; i++) {
-    var configDate = normalizeDate(values[i][CONFIG_DATE_COLUMN - 1]);
-    var configGroup = String(values[i][CONFIG_GROUP_COLUMN - 1] || "").trim();
-    if (configDate === date && configGroup === group) {
-      var maxSerial = parseInt(values[i][CONFIG_MAX_SERIAL_COLUMN - 1], 10);
-      if (isNaN(maxSerial)) return null;
-      return {
-        date: configDate,
-        group: configGroup,
-        imageUrl: String(values[i][CONFIG_IMAGE_URL_COLUMN - 1] || "").trim(),
-        maxSerial: maxSerial
-      };
-    }
-  }
-  return null;
 }
 // ============================================================
 // SAVE ATTENDANCE
