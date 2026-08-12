@@ -24,7 +24,7 @@ https://subhrendu1987.github.io/course/attendance/
 * Git commit and push the changes. After sometime, open `<ATTENDANCE_URL>` and see the dates, classes and size in the page showing proper values as given in `config` tab of the `SPREADSHEET`. Additionaly, clear local cache also.
 
 # How to use?
-Take (panoromic) picture and keep it in `Dataset/RawPicture/` with the date and class name (e.g. `02_08_2026_2C7.jpg`). At present the tool only works for `jpg` extensions. Following the given workflow to generate the student count. Once the annotation is done, add relevant data in `config` tab of `SPREADSHEET`. 
+Take (panoromic) picture and keep it in `Dataset/RawPicture/` with the date and class name (e.g. `02_08_2026_2C7.jpg`). At present the tool only works for `jpg` extensions. Following the given workflow to generate the student count. Once the annotation is done, add relevant data in `config` tab of `SPREADSHEET`. To make it effective, open AppScript `update.gs` and manually execute `clearApplicationCache()` 
 
 ## Generate Image annotations
 ### Heavy lifting

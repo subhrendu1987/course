@@ -31,5 +31,5 @@ var ATTENDANCE_HEADERS = [
   "Roll Number",
   "Serial Number"
 ];
-
+var ENABLE_LOGGING = true;
 var ATTENDANCE_SHEET_SEPARATOR = "_";

@@ -7,9 +7,10 @@ function getClassConfigurations() {
   var cached = cache.get(cacheKey);
 
   if (cached) {
+    logToSheet("Use Cached CONFIG");
     return JSON.parse(cached);
   }
-
+  logToSheet("CONFIG Not found in Cache");
   var ss = getTargetSpreadsheet();
   var sheet = getRequiredSheet(ss, CONFIG_SHEET_NAME);
   var values = sheet.getDataRange().getValues();
