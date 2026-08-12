@@ -31,6 +31,17 @@ def run_pipeline():
     if not os.path.exists(image_path):
         print(f"\n❌ Error: Raw image file not found at '{image_path}'.")
         print("Please check your file paths or specify a valid file with -f / --file.")
+        if os.path.exists(config.IMAGE_PATH):
+            # List available files in IMAGE_PATH without extension
+            files = [ os.path.splitext(f)[0] for f in os.listdir(config.IMAGE_PATH) if os.path.isfile(os.path.join(config.IMAGE_PATH, f))]
+            if files:
+                print(f"\n📁 Available files in '{config.IMAGE_PATH}':")
+                for file_name in files:
+                    print(f"   • {file_name}")
+            else:
+                print(f"\n📁 No files found in '{config.IMAGE_PATH}'.")
+        else:
+            print(f"\n📁 Directory '{config.IMAGE_PATH}' does not exist.")
         sys.exit(1)
 
     # ---------------------------------------------------------

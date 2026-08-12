@@ -2,6 +2,7 @@ import json
 import os
 import cv2
 import config
+import tkinter as tk
 
 # ==========================================
 # 🌐 CONFIGURATION & PATH SETUP
@@ -200,6 +201,21 @@ def run_interactive_annotator():
     # 3. GUI Controls Setup
     window_name = f"Annotator | 'S': Save | Right-Click: Delete | 'Z': Undo | 'Q': Quit"
     cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
+    # ---------------------------------------------------------
+    # 🪟 MAXIMIZE WINDOW WITH TOOLBARS VISIBLE
+    # ---------------------------------------------------------
+    root = tk.Tk()
+    screen_width = root.winfo_screenwidth()
+    screen_height = root.winfo_screenheight()
+    root.destroy()
+
+    # Reserve offset for system toolbars/taskbar (e.g., ~70px vertically)
+    window_width = screen_width
+    window_height = screen_height - 70
+
+    cv2.resizeWindow(window_name, window_width, window_height)
+    cv2.moveWindow(window_name, 0, 0)
+    # ---------------------------------------------------------
     cv2.setMouseCallback(window_name, draw_mouse_bbox)
 
     print("\n" + "=" * 50)
