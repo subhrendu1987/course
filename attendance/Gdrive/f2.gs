@@ -59,5 +59,3 @@ function validateRequest(request) {
   }
   return {valid: true,message: ""};
 }
-
-
