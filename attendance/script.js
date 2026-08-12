@@ -1,5 +1,5 @@
 // Web App Deployment Endpoint
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz2EW21MpNZ9Y8kV3WytbpQWyl88Gz3Q869yxEuXjjXz_MwK5vUzCFYIDj8vrdWiU2L/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxS0xSdeQkhzFQLqfGLME7JtcJfkRsRLLhz2l_EtNCjT5a_HgbtXqSkCZOPJOAR0naP/exec";
 
 let configData = {};
 let isZoomed = false;
