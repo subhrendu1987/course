@@ -48,6 +48,39 @@ def convert_body_box_to_face_box(x_c, y_c, w, h, face_ratio=0.35):
     return x_c, new_y_c, new_w, new_h
 
 
+def parse_raw_yolo_item(item):
+    """Parses a string or dict annotation entry into a standardized dictionary."""
+    if isinstance(item, str):
+        parts = item.strip().split()
+        if len(parts) < 5:
+            return None
+        cls_id = int(parts[0])
+        x_c, y_c, w, h = map(float, parts[1:])
+    elif isinstance(item, dict):
+        bbox = item.get("bbox", item.get("box", []))
+        if len(bbox) == 4:
+            cls_id = int(item.get("class", 0))
+            x_c, y_c, w, h = map(float, bbox)
+        else:
+            return None
+    else:
+        return None
+
+    x1 = x_c - (w / 2.0)
+    y1 = y_c - (h / 2.0)
+    x2 = x_c + (w / 2.0)
+    y2 = y_c + (h / 2.0)
+
+    return {
+        "class": cls_id,
+        "corner": [x1, y1, x2, y2],
+        "yolo_str": f"{cls_id} {x_c:.4f} {y_c:.4f} {w:.4f} {h:.4f}",
+        "x_center": x_c,
+        "y_center": y_c,
+        "area": (x2 - x1) * (y2 - y1),
+    }
+
+
 def calculate_iou(boxA, boxB):
     """Calculates Intersection over Union (IoU) between two bounding boxes [x1, y1, x2, y2]."""
     xA = max(boxA[0], boxB[0])
@@ -65,8 +98,8 @@ def calculate_iou(boxA, boxB):
     return interArea / float(boxAArea + boxBArea - interArea)
 
 
-def non_max_suppression_yolo(yolo_list, iou_threshold=IOU_THRESHOLD, face_ratio=0.35):
-    """Filters out overlapping bounding boxes and crops detections to face-only areas."""
+def non_max_suppression_yolo(yolo_list, iou_threshold=IOU_THRESHOLD, face_ratio=0.35, convert_faces=True):
+    """Filters out overlapping bounding boxes and optionally converts body boxes to face-only areas."""
     if not yolo_list:
         return []
 
@@ -87,24 +120,31 @@ def non_max_suppression_yolo(yolo_list, iou_threshold=IOU_THRESHOLD, face_ratio=
         else:
             continue
 
-        # 🎯 Refine Box -> Keep Only Face Region
-        face_xc, face_yc, face_w, face_h = convert_body_box_to_face_box(
-            x_c, y_c, w, h, face_ratio=face_ratio
-        )
-
-        x1 = face_xc - (face_w / 2.0)
-        y1 = face_yc - (face_h / 2.0)
-        x2 = face_xc + (face_w / 2.0)
-        y2 = face_yc + (face_h / 2.0)
-
-        face_yolo_str = f"{cls_id} {face_xc:.4f} {face_yc:.4f} {face_w:.4f} {face_h:.4f}"
+        if convert_faces:
+            # 🎯 Refine Box -> Keep Only Face Region
+            face_xc, face_yc, face_w, face_h = convert_body_box_to_face_box(
+                x_c, y_c, w, h, face_ratio=face_ratio
+            )
+            x1 = face_xc - (face_w / 2.0)
+            y1 = face_yc - (face_h / 2.0)
+            x2 = face_xc + (face_w / 2.0)
+            y2 = face_yc + (face_h / 2.0)
+            yolo_str = f"{cls_id} {face_xc:.4f} {face_yc:.4f} {face_w:.4f} {face_h:.4f}"
+            xc, yc = face_xc, face_yc
+        else:
+            x1 = x_c - (w / 2.0)
+            y1 = y_c - (h / 2.0)
+            x2 = x_c + (w / 2.0)
+            y2 = y_c + (h / 2.0)
+            yolo_str = f"{cls_id} {x_c:.4f} {y_c:.4f} {w:.4f} {h:.4f}"
+            xc, yc = x_c, y_c
 
         parsed_boxes.append({
             "class": cls_id,
             "corner": [x1, y1, x2, y2],
-            "yolo_str": face_yolo_str,
-            "x_center": face_xc,
-            "y_center": face_yc,
+            "yolo_str": yolo_str,
+            "x_center": xc,
+            "y_center": yc,
             "area": (x2 - x1) * (y2 - y1),
         })
 
@@ -132,6 +172,15 @@ def sort_boxes_by_position(boxes, row_tolerance=ROW_TOLERANCE):
     if not boxes:
         return []
 
+    # If list consists of raw JSON items/strings, parse them into dict objects
+    if isinstance(boxes[0], (str, dict)):
+        parsed = []
+        for item in boxes:
+            p = parse_raw_yolo_item(item)
+            if p:
+                parsed.append(p)
+        boxes = parsed
+
     boxes_sorted_y = sorted(boxes, key=lambda b: b["y_center"])
 
     rows = []
@@ -155,10 +204,11 @@ def sort_boxes_by_position(boxes, row_tolerance=ROW_TOLERANCE):
     return final_sorted_yolo_strings
 
 
-def cleanup_and_sort_json(iou_threshold=IOU_THRESHOLD, row_tolerance=ROW_TOLERANCE):
+def load_annotation_file():
+    """Helper to safely read JSON input file."""
     if not os.path.exists(FULL_ANNOTATION_PATH):
         print(f"❌ Error: File '{FULL_ANNOTATION_PATH}' not found.")
-        return
+        return None
 
     with open(FULL_ANNOTATION_PATH, "r") as f:
         raw_data = json.load(f)
@@ -166,25 +216,73 @@ def cleanup_and_sort_json(iou_threshold=IOU_THRESHOLD, row_tolerance=ROW_TOLERAN
     if isinstance(raw_data, dict):
         raw_data = raw_data.get("annotations", raw_data.get("labels", []))
 
+    return raw_data
+
+
+def save_annotation_file(yolo_strings):
+    """Helper to save output JSON file."""
+    os.makedirs(os.path.dirname(CLEANED_ANNOTATION_PATH), exist_ok=True)
+    with open(CLEANED_ANNOTATION_PATH, "w") as f:
+        json.dump(yolo_strings, f, indent=2)
+
+
+# ==========================================
+# ⚙️ INDIVIDUAL TASK EXECUTORS
+# ==========================================
+
+def sort_only(row_tolerance=ROW_TOLERANCE):
+    """Task 1: Performs ONLY spatial sorting without modifying box dimensions or removing overlaps."""
+    raw_data = load_annotation_file()
+    if raw_data is None:
+        return
+
+    sorted_yolo_strings = sort_boxes_by_position(raw_data, row_tolerance=row_tolerance)
+    save_annotation_file(sorted_yolo_strings)
+
+    print(f"📌 Position Sorting Complete for '{ImageName}.json':")
+    print(f"   ├─ Total Boxes Sorted : {len(sorted_yolo_strings)}")
+    print(f"   └─ Order               : Top-to-Bottom, Left-to-Right (row-by-row)")
+
+
+def cleanup_only(iou_threshold=IOU_THRESHOLD, face_ratio=0.35):
+    """Task 2: Performs ONLY face box refinement and overlap removal without spatial sorting."""
+    raw_data = load_annotation_file()
+    if raw_data is None:
+        return
+
+    initial_count = len(raw_data)
+    cleaned_boxes = non_max_suppression_yolo(
+        raw_data, iou_threshold=iou_threshold, face_ratio=face_ratio, convert_faces=True
+    )
+    cleaned_yolo_strings = [box["yolo_str"] for box in cleaned_boxes]
+    save_annotation_file(cleaned_yolo_strings)
+
+    final_count = len(cleaned_yolo_strings)
+    print(f"🧹 Cleanup Only Complete for '{ImageName}.json':")
+    print(f"   ├─ Initial Box Count : {initial_count}")
+    print(f"   ├─ Overlaps Removed  : {initial_count - final_count}")
+    print(f"   └─ Final Face Count  : {final_count}")
+
+
+def cleanup_and_sort_json(iou_threshold=IOU_THRESHOLD, row_tolerance=ROW_TOLERANCE):
+    """Task 3: Performs BOTH face cleanup (NMS + face conversion) AND row-by-row spatial sorting."""
+    raw_data = load_annotation_file()
+    if raw_data is None:
+        return
+
     initial_count = len(raw_data)
 
     # 1. Convert to face-only + Remove IoU Overlaps
-    cleaned_boxes = non_max_suppression_yolo(raw_data, iou_threshold=iou_threshold)
+    cleaned_boxes = non_max_suppression_yolo(raw_data, iou_threshold=iou_threshold, convert_faces=True)
 
     # 2. Sort by spatial positions (Row by Row, Left to Right)
     sorted_yolo_strings = sort_boxes_by_position(cleaned_boxes, row_tolerance=row_tolerance)
 
     final_count = len(sorted_yolo_strings)
-
-    # Ensure target output directory exists
-    os.makedirs(os.path.dirname(CLEANED_ANNOTATION_PATH), exist_ok=True)
-
-    # 3. Save sorted face annotations back to JSON
-    with open(CLEANED_ANNOTATION_PATH, "w") as f:
-        json.dump(sorted_yolo_strings, f, indent=2)
+    save_annotation_file(sorted_yolo_strings)
 
     removed_count = initial_count - final_count
-    print(f"🧹 Face Cleanup & Position Sorting Complete for '{ImageName}.json':")
+    print(f"🧹 Full Cleanup & Position Sorting Complete for '{ImageName}.json':")
     print(f"   ├─ Initial Box Count : {initial_count}")
     print(f"   ├─ Overlaps Removed  : {removed_count}")
     print(f"   ├─ Final Face Count  : {final_count}")
@@ -192,4 +290,5 @@ def cleanup_and_sort_json(iou_threshold=IOU_THRESHOLD, row_tolerance=ROW_TOLERAN
 
 
 if __name__ == "__main__":
+    # Example execution: Runs full cleanup and sorting
     cleanup_and_sort_json(iou_threshold=IOU_THRESHOLD, row_tolerance=ROW_TOLERANCE)

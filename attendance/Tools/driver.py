@@ -61,23 +61,37 @@ def run_pipeline():
     # Run interactive OpenCV GUI tool
     annotate.run_interactive_annotator()
 
+# ---------------------------------------------------------
+    # STEP 3: Cleanup & Row Sorting Options
     # ---------------------------------------------------------
-    # STEP 3: Optional Cleanup, Face Bbox Refinement & Sorting
-    # ---------------------------------------------------------
-    print_banner(3, "CLEANUP & ROW SORTING (OPTIONAL)")
-    
-    # Ask the user if they want to perform cleanup
-    user_choice = input("👉 Do you want to run face cleanup & row-by-row sorting? (y/N): ").strip().lower()
+    print_banner(3, "CLEANUP & ROW SORTING OPTIONS")
+    print(" Choose an option:")
+    print("   [1] Run Full Cleanup (Face Refinement + NMS Overlap Removal) & Row Sorting")
+    print("   [2] Run Row Sorting ONLY (Keep existing box dimensions)")
+    print("   [3] Run Cleanup ONLY (Face Refinement + NMS Overlap Removal)")
+    print("   [4] Skip Cleanup & Sorting")
 
-    if user_choice in ("y", "yes"):
-        print("\n🧹 Executing Cleanup...")
+    choice = input("\n👉 Enter option number (1-4, default is 1): ").strip()
+
+    if choice == "2":
+        print("\n📌 Running Row Sorting Only...")
+        cleanup.sort_only(
+            row_tolerance=config.ROW_TOLERANCE
+        )
+    elif choice == "3":
+        print("\n🧹 Running Cleanup Only...")
+        cleanup.cleanup_only(
+            iou_threshold=config.IOU_THRESHOLD
+        )
+    elif choice == "4":
+        print("\n⏩ Skipped cleanup & sorting. Keeping manual annotations as-is.")
+    else:
+        # Default option 1
+        print("\n🧹 Executing Full Cleanup & Row Sorting...")
         cleanup.cleanup_and_sort_json(
             iou_threshold=config.IOU_THRESHOLD, 
             row_tolerance=config.ROW_TOLERANCE
         )
-    else:
-        print("\n⏩ Skipped cleanup & sorting. Keeping manual annotations as-is.")
-
     # ---------------------------------------------------------
     # STEP 4: Regenerate Final Visualizer Preview
     # ---------------------------------------------------------
