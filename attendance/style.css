@@ -278,6 +278,28 @@ button:disabled {
   text-align: center;
 }
 
+.status-hlp {
+  margin-top: 16px;
+  padding: 12px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: bold;
+  color: red;
+  display: none;
+  text-align: center;
+}
+
+.ok-status{
+  margin-top: 16px;
+  padding: 12px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: bold;
+  color: red;
+  display: none;
+  text-align: center;
+}
+
 .status-msg.success { background-color: #dcfce7; color: var(--success); }
 .status-msg.error { background-color: #fee2e2; color: var(--error); }
 .status-msg.warning { background-color: #fef3c7; color: var(--warning); }
