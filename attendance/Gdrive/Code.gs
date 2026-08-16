@@ -64,7 +64,29 @@ function doPost(e) {
         message: "Roll Number not in list"
       });
     }
+    
     logs.push("✅ Roll Number '" + request.roll + "' verified.");
+    // --------------------------------------------------------
+    // Check Email registered
+    // --------------------------------------------------------
+    //logs.push("Check Email registered");
+    var conflictMessage =
+      "The Email ID ("+request.email+") does not match our record. Use thapar Email ID. ["+
+      request.date + " / " + request.group+"]";
+    try {
+      var isValid = verifyRollAndEmail(ss, request.roll, request.email);
+      if (!isValid) {
+        logs.push("⚠️ [" + json(request) +"] Has some issue.");
+        logToSheet(logs.join(" \n "));
+        return json({ status: "conflict", message: conflictMessage });
+      }
+    } catch (err) {
+      // Safe string conversion prevents "Cannot read properties of undefined (reading 'message')"
+      var errorMessage = (err && err.message) ? err.message : String(err);
+      logToSheet("❌ Exception in verifyRollAndEmail: " + errorMessage);
+      return json({ status: "conflict", message: conflictMessage });
+    }
+    logs.push("✅ Email ID '" + request.email + "' verified.");
     // --------------------------------------------------------
     // Get class configuration
     // --------------------------------------------------------

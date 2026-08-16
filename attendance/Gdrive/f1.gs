@@ -1,3 +1,10 @@
+function MATCHING_SHEETS(section) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const pattern = new RegExp("^\\d{2}_\\d{2}.*2026.*" + section + "$");
+  return [ss.getSheets()
+    .map(sheet => sheet.getName())
+    .filter(name => pattern.test(name))];
+}
 // ============================================================
 // SPREADSHEET
 // ============================================================
