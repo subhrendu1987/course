@@ -64,6 +64,8 @@ def run_pipeline():
 # ---------------------------------------------------------
     # STEP 3: Cleanup & Row Sorting Options
     # ---------------------------------------------------------
+    overlappingArea=cleanup.calculate_total_overlapping_area()
+    print(f"Tot Overlap Area  : {overlappingArea}")
     print_banner(3, "CLEANUP & ROW SORTING OPTIONS")
     print(" Choose an option:")
     print("   [1] Run Full Cleanup (Face Refinement + NMS Overlap Removal) & Row Sorting")
@@ -71,7 +73,7 @@ def run_pipeline():
     print("   [3] Run Cleanup ONLY (Face Refinement + NMS Overlap Removal)")
     print("   [4] Skip Cleanup & Sorting")
 
-    choice = input("\n👉 Enter option number (1-4, default is 1): ").strip()
+    choice = input("\n👉 Enter option number (1-4, default is 4): ").strip()
 
     if choice == "2":
         print("\n📌 Running Row Sorting Only...")

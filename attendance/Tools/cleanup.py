@@ -1,6 +1,9 @@
 import json
 import os
 import config
+from shapely.geometry import box
+from shapely.ops import unary_union
+
 
 # ==========================================
 # 🌐 CONFIGURATION & PATH SETUP
@@ -181,7 +184,15 @@ def sort_boxes_by_position(boxes, row_tolerance=ROW_TOLERANCE):
                 parsed.append(p)
         boxes = parsed
 
+    # 🔴 FIX: Check again in case parsed list evaluated to empty
+    if not boxes:
+        return []
+
     boxes_sorted_y = sorted(boxes, key=lambda b: b["y_center"])
+
+    # 🔴 FIX: Check before indexing boxes_sorted_y[0]
+    if not boxes_sorted_y:
+        return []
 
     rows = []
     current_row = [boxes_sorted_y[0]]
@@ -241,7 +252,7 @@ def sort_only(row_tolerance=ROW_TOLERANCE):
 
     print(f"📌 Position Sorting Complete for '{ImageName}.json':")
     print(f"   ├─ Total Boxes Sorted : {len(sorted_yolo_strings)}")
-    print(f"   └─ Order               : Top-to-Bottom, Left-to-Right (row-by-row)")
+    print(f"   └─ Order              : Top-to-Bottom, Left-to-Right (row-by-row)")
 
 
 def cleanup_only(iou_threshold=IOU_THRESHOLD, face_ratio=0.35):
@@ -282,12 +293,78 @@ def cleanup_and_sort_json(iou_threshold=IOU_THRESHOLD, row_tolerance=ROW_TOLERAN
     save_annotation_file(sorted_yolo_strings)
 
     removed_count = initial_count - final_count
+    overlappingArea=calculate_total_overlapping_area()
     print(f"🧹 Full Cleanup & Position Sorting Complete for '{ImageName}.json':")
     print(f"   ├─ Initial Box Count : {initial_count}")
     print(f"   ├─ Overlaps Removed  : {removed_count}")
+    print(f"   ├─ Tot Overlap Area  : {overlappingArea}")
     print(f"   ├─ Final Face Count  : {final_count}")
     print(f"   └─ Position Sorting  : Top-to-Bottom, Left-to-Right (row-by-row)")
+    
 
+def calculate_total_overlapping_area():
+    """Calculates the total non-redundant overlapping area among all bounding boxes."""
+    raw_data = load_annotation_file()
+    if not raw_data:
+        return 0.0
+
+    parsed_boxes = []
+    for item in raw_data:
+        p = parse_raw_yolo_item(item)
+        if p:
+            parsed_boxes.append(p)
+
+    total_intersection_area = 0.0
+
+    # Calculate pairwise intersection areas
+    for i in range(len(parsed_boxes)):
+        for j in range(i + 1, len(parsed_boxes)):
+            boxA = parsed_boxes[i]["corner"]
+            boxB = parsed_boxes[j]["corner"]
+
+            xA = max(boxA[0], boxB[0])
+            yA = max(boxA[1], boxB[1])
+            xB = min(boxA[2], boxB[2])
+            yB = min(boxA[3], boxB[3])
+
+            inter_w = max(0.0, xB - xA)
+            inter_h = max(0.0, yB - yA)
+            overlap = inter_w * inter_h
+
+            total_intersection_area += overlap
+
+    print(f"📐 Total Pairwise Overlapping Area: {total_intersection_area:.6f}")
+    return total_intersection_area
+
+
+def calculate_exact_union_overlap():
+    """Calculates exact total overlapping area using Shapely (handles multi-box overlaps correctly)."""
+    raw_data = load_annotation_file()
+    if not raw_data:
+        return 0.0
+
+    polygons = []
+    total_individual_area = 0.0
+
+    for item in raw_data:
+        p = parse_raw_yolo_item(item)
+        if p:
+            c = p["corner"]  # [x1, y1, x2, y2]
+            poly = box(c[0], c[1], c[2], c[3])
+            polygons.append(poly)
+            total_individual_area += poly.area
+
+    if not polygons:
+        return 0.0
+
+    # Union of all boxes combined
+    merged_polygon = unary_union(polygons)
+
+    # Overlapping Area = Sum of Individual Areas - Area of Merged Union
+    total_overlap = total_individual_area - merged_polygon.area
+
+    print(f"📐 Total Unique Overlapping Area: {total_overlap:.6f}")
+    return total_overlap
 
 if __name__ == "__main__":
     # Example execution: Runs full cleanup and sorting

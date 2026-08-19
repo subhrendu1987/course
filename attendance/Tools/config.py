@@ -17,6 +17,7 @@ ANNOTATION_PATH = "../Dataset/Annotated/"
 AUGMENTED_IMAGE_PATH = "../Dataset/Augmented/Images/"
 AUGMENTED_ANNOTATION_PATH = "../Dataset/Augmented/"
 PREVIEW_PATH="../Dataset/Preview/"
+BLURRED_PATH="../Dataset/Blurred/"
 
 # Default Target File
 IMAGE_EXTN = ".jpg"
