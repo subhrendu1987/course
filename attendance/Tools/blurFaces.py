@@ -10,8 +10,10 @@ import config
 IMAGE_PATH = getattr(config, "IMAGE_PATH", "Dataset/RawPicture/")
 ANNOTATION_PATH = getattr(config, "ANNOTATION_PATH", "Dataset/Annotated/")
 PREVIEW_PATH = getattr(config, "PREVIEW_PATH", "Dataset/Preview/")
+BLURRED_PATH = getattr(config, "BLURRED_PATH", "Dataset/Blurred/")
 IMAGE_EXTN = getattr(config, "IMAGE_EXTN", ".jpg")
 ImageName = getattr(config, "IMAGE_NAME", "")
+
 
 # Safely construct Full Paths
 if hasattr(config, "get_image_path"):

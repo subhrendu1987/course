@@ -1,5 +1,7 @@
 // Web App Deployment Endpoint
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxS0xSdeQkhzFQLqfGLME7JtcJfkRsRLLhz2l_EtNCjT5a_HgbtXqSkCZOPJOAR0naP/exec";
+//const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwGKmP2E9yDjd1MNhMdB7K-ZecdB5wAQhLcYbo89-vlQCP7XLhgLXJPdt7PE_JD1LWHMQ/exec";
+
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwNu4-xjLRd7YcXMP0goTebtd2zislLigPyKXJIamdPj6cx71y93cCO3Kk1VaxpIovvpw/exec";
 
 let configData = {};
 let isZoomed = false;
@@ -76,7 +78,16 @@ async function loadConfig() {
 // Populate Date Dropdown (skips non-date header keys if present)
 function populateDates() {
   dateSelect.innerHTML = '<option value="">-- Select Date --</option>';
-  const dates = Object.keys(configData).filter(d => d !== 'Date');
+
+  const dates = Object.keys(configData)
+    .filter(d => d !== 'Date')
+    .sort((a, b) => {
+      const [dayA, monthA, yearA] = a.split('_').map(Number);
+      const [dayB, monthB, yearB] = b.split('_').map(Number);
+
+      return new Date(yearB, monthB - 1, dayB) -
+             new Date(yearA, monthA - 1, dayA);
+    });
 
   if (dates.length === 0) {
     dateSelect.innerHTML = '<option value="">No dates available</option>';
@@ -90,6 +101,25 @@ function populateDates() {
     dateSelect.appendChild(opt);
   });
 }
+
+
+
+/*function populateDates() {
+  dateSelect.innerHTML = '<option value="">-- Select Date --</option>';
+  const dates = Object.keys(configData).filter(d => d !== 'Date');
+
+  if (dates.length === 0) {
+    dateSelect.innerHTML = '<option value="">No dates available</option>';
+    return;
+  }
+
+  dates.forEach(date => {
+    const opt = document.createElement('option');
+    opt.value = date;
+    opt.textContent = date.replace(/_/g, '/');
+    dateSelect.appendChild(opt);
+  });
+}*/
 
 // Handle Date Selection Change
 dateSelect.addEventListener('change', () => {
@@ -303,18 +333,12 @@ function checkStatusHelp() {
     statusHelp.style.display = "block";
   } else {
     statusHelp.style.display = "none";
-    if (statusMessage.textContent.includes("Attendance marked successfully")) {
-        statusOk.style.display = "block";
-    } else {
-        statusOk.style.display = "none";
-    }
-  }
-}
 
-  if (statusMessage.textContent.includes("has already been claimed")) {
-    statusHelp.style.display = "block";
-  } else {
-    statusHelp.style.display = "none";
+    if (statusMessage.textContent.includes("Attendance marked successfully")) {
+      statusOk.style.display = "block";
+    } else {
+      statusOk.style.display = "none";
+    }
   }
 }
 

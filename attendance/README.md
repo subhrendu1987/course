@@ -61,7 +61,8 @@ Create Annotations for the attached picture in yolo annotations in json. In the 
 	- Undo one by one by pressing `z`
 	- Reset newly added boxes by pressing `r`
 * Use cleanup script to order the boxes based on coordinate by pressing "y", otherwise press "N".
-
+### Highlight the Faces
+* Execute `python3 blurFaces.py -f 31_07_2026_2C7`
 ## To use the functionalities separately
 ### Preview image
 * Check if it requires further editing or not by going to `Dataset/Preview/`
