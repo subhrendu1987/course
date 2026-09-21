@@ -1,3 +1,23 @@
+function onEdit(e) {
+  const range = e.range;
+
+  if (range.getSheet().getName() === CONFIG_SHEET_NAME &&
+      range.getA1Notation() === "C3") {
+    restoreC2Formula();
+    Logger.log("Array Formula for Picture URL generation Updated");
+  }
+}
+
+
+function restoreC2Formula() {
+  const sheet=getTargetSpreadsheet().getSheetByName(CONFIG_SHEET_NAME);
+  if (!sheet) return;
+  const formula = `=ARRAYFORMULA(IF((A3:A<>"")*(B3:B<>""),"https://raw.githubusercontent.com/"&INDEX(REGEXEXTRACT($C$1,"https://([^./]+)\\.github\\.io/([^/]+)"),1,1)&"/"&INDEX(REGEXEXTRACT($C$1,"https://([^./]+)\\.github\\.io/([^/]+)"),1,2)&"/main/attendance/Dataset/Preview/"&A3:A&"_"&B3:B&".jpg",""))`;
+  sheet.getRange("C3:C").clearContent();
+  sheet.getRange("C3").setFormula(formula);
+  
+}
+
 function MATCHING_SHEETS(...sections) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheetNames = ss.getSheets().map(sheet => sheet.getName());
