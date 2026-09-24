@@ -71,10 +71,10 @@ async function handleCredentialResponse(response) {
       authStatus.classList.add('authenticated');
     }
 
-    // Enable form fields once authenticated
+    // Enable form inputs once authenticated
     enableFormInputs();
 
-    // If configData hasn't been fetched yet, fetch it now; otherwise populate directly
+    // Fetch config data if not fetched yet, or populate dates immediately
     if (Object.keys(configData).length === 0) {
       await loadConfig();
     } else {
@@ -124,7 +124,7 @@ async function loadConfig() {
     if (json.status === "success" && json.data) {
       configData = json.data;
 
-      // Automatically populate dates if user is already logged in
+      // Automatically populate dates if user is logged in
       if (googleEmail) {
         populateDates();
       } else {
@@ -143,7 +143,11 @@ async function loadConfig() {
 
 // Populate Date Dropdown
 function populateDates() {
-  dateSelect.innerHTML = '<option value="">-- Select Date --</option>';
+  if (!googleEmail) {
+    dateSelect.innerHTML = '<option value="">Authenticate with Google Login First</option>';
+    dateSelect.disabled = true;
+    return;
+  }
 
   const dates = Object.keys(configData)
     .filter(d => d !== 'Date')
@@ -156,8 +160,11 @@ function populateDates() {
 
   if (dates.length === 0) {
     dateSelect.innerHTML = '<option value="">No dates available</option>';
+    dateSelect.disabled = true;
     return;
   }
+
+  dateSelect.innerHTML = '<option value="">-- Select Date --</option>';
 
   dates.forEach(date => {
     const opt = document.createElement('option');
@@ -166,7 +173,7 @@ function populateDates() {
     dateSelect.appendChild(opt);
   });
 
-  // Unlock selection dropdown
+  // Explicitly unlock date selection box
   dateSelect.disabled = false;
 }
 
