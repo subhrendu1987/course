@@ -1,11 +1,11 @@
 // Web App Deployment Endpoint
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwVnxbkylSC6aKiZ7e7UdrKogVqsVrFTQOEZ8exauIUj47XrQpgK9TAaRBOpR56ESoR/exec";
+//const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwGKmP2E9yDjd1MNhMdB7K-ZecdB5wAQhLcYbo89-vlQCP7XLhgLXJPdt7PE_JD1LWHMQ/exec";
+
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxS0xSdeQkhzFQLqfGLME7JtcJfkRsRLLhz2l_EtNCjT5a_HgbtXqSkCZOPJOAR0naP/exec";
 
 let configData = {};
 let isZoomed = false;
-let googleEmail = "";
 
-// DOM Elements
 const dateSelect = document.getElementById('classDate');
 const groupSelect = document.getElementById('groupName');
 const previewImg = document.getElementById('previewImg');
@@ -30,63 +30,41 @@ const helpBox = document.getElementById('helpBox');
 const closeHelpBtn = document.getElementById('closeHelpBtn');
 
 // Toggle Help Box
-if (helpToggleBtn) {
-  helpToggleBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    helpBox.classList.toggle('active');
-  });
-}
+helpToggleBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  helpBox.classList.toggle('active');
+});
 
-if (closeHelpBtn) {
-  closeHelpBtn.addEventListener('click', () => {
-    helpBox.classList.remove('active');
-  });
-}
+closeHelpBtn.addEventListener('click', () => {
+  helpBox.classList.remove('active');
+});
 
 // Close Help Box when clicking outside
 document.addEventListener('click', (e) => {
-  if (helpBox && !helpBox.contains(e.target) && e.target !== helpToggleBtn) {
+  if (!helpBox.contains(e.target) && e.target !== helpToggleBtn) {
     helpBox.classList.remove('active');
   }
 });
 
 function showModal(text = "Processing request...") {
-  if (loadingText && loadingModal) {
-    loadingText.textContent = text;
-    loadingModal.classList.add('active');
-  }
+  loadingText.textContent = text;
+  loadingModal.classList.add('active');
 }
 
 function hideModal() {
-  if (loadingModal) {
-    loadingModal.classList.remove('active');
-  }
+  loadingModal.classList.remove('active');
 }
 
-function enableFormInputs() {
-  if (dateSelect) dateSelect.disabled = false;
-  const emailElem = document.getElementById('email');
-  const rollElem = document.getElementById('rollNumber');
-
-  if (emailElem) emailElem.disabled = false;
-  if (rollElem) rollElem.disabled = false;
-  if (serialInput) serialInput.disabled = false;
-}
-
-// ------------------------------------------------------------
-// CONFIG FETCHING & DROPDOWN POPULATION
-// ------------------------------------------------------------
-
+// Fetch Config Data on Page Load
 async function loadConfig() {
   showModal("Please wait. Loading options...");
   try {
-    const response = await fetch(`${SCRIPT_URL}?_=${Date.now()}`);
+    const response = await fetch(SCRIPT_URL);
     const json = await response.json();
 
     if (json.status === "success" && json.data) {
       configData = json.data;
       populateDates();
-      enableFormInputs();
     } else {
       showStatus("Failed to load options from server. Try later...", "error");
     }
@@ -97,8 +75,9 @@ async function loadConfig() {
   }
 }
 
+// Populate Date Dropdown (skips non-date header keys if present)
 function populateDates() {
-  if (!dateSelect) return;
+  dateSelect.innerHTML = '<option value="">-- Select Date --</option>';
 
   const dates = Object.keys(configData)
     .filter(d => d !== 'Date')
@@ -106,16 +85,14 @@ function populateDates() {
       const [dayA, monthA, yearA] = a.split('_').map(Number);
       const [dayB, monthB, yearB] = b.split('_').map(Number);
 
-      return new Date(yearB, monthB - 1, dayB) - new Date(yearA, monthA - 1, dayA);
+      return new Date(yearB, monthB - 1, dayB) -
+             new Date(yearA, monthA - 1, dayA);
     });
 
   if (dates.length === 0) {
     dateSelect.innerHTML = '<option value="">No dates available</option>';
-    dateSelect.disabled = true;
     return;
   }
-
-  dateSelect.innerHTML = '<option value="">-- Select Date --</option>';
 
   dates.forEach(date => {
     const opt = document.createElement('option');
@@ -123,42 +100,53 @@ function populateDates() {
     opt.textContent = date.replace(/_/g, '/');
     dateSelect.appendChild(opt);
   });
-
-  dateSelect.disabled = false;
 }
 
-// ------------------------------------------------------------
-// SELECTION & IMAGE PREVIEW HANDLERS
-// ------------------------------------------------------------
 
-if (dateSelect) {
-  dateSelect.addEventListener('change', () => {
-    const selectedDate = dateSelect.value;
-    groupSelect.innerHTML = '<option value="">-- Select Group --</option>';
-    resetPreview();
-    resetSerialLimit();
 
-    if (selectedDate && configData[selectedDate]) {
-      groupSelect.disabled = false;
-      configData[selectedDate].forEach(item => {
-        const opt = document.createElement('option');
-        opt.value = item.group;
-        opt.textContent = item.group;
-        groupSelect.appendChild(opt);
-      });
-    } else {
-      groupSelect.disabled = true;
-      groupSelect.innerHTML = '<option value="">Select Date First</option>';
-    }
+/*function populateDates() {
+  dateSelect.innerHTML = '<option value="">-- Select Date --</option>';
+  const dates = Object.keys(configData).filter(d => d !== 'Date');
+
+  if (dates.length === 0) {
+    dateSelect.innerHTML = '<option value="">No dates available</option>';
+    return;
+  }
+
+  dates.forEach(date => {
+    const opt = document.createElement('option');
+    opt.value = date;
+    opt.textContent = date.replace(/_/g, '/');
+    dateSelect.appendChild(opt);
   });
-}
+}*/
 
-if (groupSelect) {
-  groupSelect.addEventListener('change', () => {
-    updateImagePreview();
-    updateSerialLimit();
-  });
-}
+// Handle Date Selection Change
+dateSelect.addEventListener('change', () => {
+  const selectedDate = dateSelect.value;
+  groupSelect.innerHTML = '<option value="">-- Select Group --</option>';
+  resetPreview();
+  resetSerialLimit();
+
+  if (selectedDate && configData[selectedDate]) {
+    groupSelect.disabled = false;
+    configData[selectedDate].forEach(item => {
+      const opt = document.createElement('option');
+      opt.value = item.group;
+      opt.textContent = item.group;
+      groupSelect.appendChild(opt);
+    });
+  } else {
+    groupSelect.disabled = true;
+    groupSelect.innerHTML = '<option value="">Select Date First</option>';
+  }
+});
+
+// Handle Group Selection Change -> Update Image & Limits
+groupSelect.addEventListener('change', () => {
+  updateImagePreview();
+  updateSerialLimit();
+});
 
 function updateImagePreview() {
   const selectedDate = dateSelect.value;
@@ -177,15 +165,12 @@ function updateImagePreview() {
 }
 
 function resetPreview() {
-  if (previewImg) {
-    previewImg.src = '';
-    previewImg.style.display = 'none';
-  }
-  if (previewPlaceholder) {
-    previewPlaceholder.style.display = 'block';
-  }
+  previewImg.src = '';
+  previewImg.style.display = 'none';
+  previewPlaceholder.style.display = 'block';
 }
 
+// Helper: Get maxSerial for current selected Date and Group
 function getMaxSerial() {
   const selectedDate = dateSelect.value;
   const selectedGroup = groupSelect.value;
@@ -199,6 +184,7 @@ function getMaxSerial() {
   return null;
 }
 
+// Update input max attribute & placeholder based on maxSerial
 function updateSerialLimit() {
   const maxSerial = getMaxSerial();
 
@@ -211,42 +197,33 @@ function updateSerialLimit() {
 }
 
 function resetSerialLimit() {
-  if (serialInput) {
-    serialInput.removeAttribute('max');
-    serialInput.placeholder = "e.g. 12";
+  serialInput.removeAttribute('max');
+  serialInput.placeholder = "e.g. 12";
+}
+
+// Lightbox Zoom Event Listeners
+previewImg.addEventListener('click', () => {
+  if (previewImg.src) {
+    fullscreenImg.src = previewImg.src;
+    imageModal.classList.add('active');
   }
-}
+});
 
-// ------------------------------------------------------------
-// LIGHTBOX & ZOOM LOGIC
-// ------------------------------------------------------------
+fullscreenImg.addEventListener('click', (e) => {
+  e.stopPropagation();
+  isZoomed = !isZoomed;
 
-if (previewImg) {
-  previewImg.addEventListener('click', () => {
-    if (previewImg.src) {
-      fullscreenImg.src = previewImg.src;
-      imageModal.classList.add('active');
-    }
-  });
-}
+  if (isZoomed) {
+    fullscreenImg.classList.add('zoomed');
+    updateZoomPosition(e);
+  } else {
+    resetZoom();
+  }
+});
 
-if (fullscreenImg) {
-  fullscreenImg.addEventListener('click', (e) => {
-    e.stopPropagation();
-    isZoomed = !isZoomed;
-
-    if (isZoomed) {
-      fullscreenImg.classList.add('zoomed');
-      updateZoomPosition(e);
-    } else {
-      resetZoom();
-    }
-  });
-
-  fullscreenImg.addEventListener('mousemove', (e) => {
-    if (isZoomed) updateZoomPosition(e);
-  });
-}
+fullscreenImg.addEventListener('mousemove', (e) => {
+  if (isZoomed) updateZoomPosition(e);
+});
 
 function updateZoomPosition(e) {
   const rect = fullscreenImg.getBoundingClientRect();
@@ -257,106 +234,96 @@ function updateZoomPosition(e) {
 
 function resetZoom() {
   isZoomed = false;
-  if (fullscreenImg) {
-    fullscreenImg.classList.remove('zoomed');
-    fullscreenImg.style.transformOrigin = 'center center';
-  }
+  fullscreenImg.classList.remove('zoomed');
+  fullscreenImg.style.transformOrigin = 'center center';
 }
 
 function closeFullscreen() {
   resetZoom();
-  if (imageModal) imageModal.classList.remove('active');
+  imageModal.classList.remove('active');
 }
 
-if (closeImageModal) closeImageModal.addEventListener('click', closeFullscreen);
+closeImageModal.addEventListener('click', closeFullscreen);
 
-if (imageModal) {
-  imageModal.addEventListener('click', (e) => {
-    if (e.target === imageModal) closeFullscreen();
-  });
-}
+imageModal.addEventListener('click', (e) => {
+  if (e.target === imageModal) closeFullscreen();
+});
 
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
-    if (imageModal && imageModal.classList.contains('active')) closeFullscreen();
-    if (helpBox && helpBox.classList.contains('active')) helpBox.classList.remove('active');
+    if (imageModal.classList.contains('active')) closeFullscreen();
+    if (helpBox.classList.contains('active')) helpBox.classList.remove('active');
   }
 });
 
-// ------------------------------------------------------------
-// FORM SUBMISSION HANDLING
-// ------------------------------------------------------------
+// Form Submission Handling
+attendanceForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  hideStatus();
 
-if (attendanceForm) {
-  attendanceForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    hideStatus();
+  const serialNum = parseInt(serialInput.value.trim(), 10);
+  const maxSerial = getMaxSerial();
 
-    const serialNum = parseInt(serialInput.value.trim(), 10);
-    const maxSerial = getMaxSerial();
+  // Validate Serial Number against upper bound
+  if (isNaN(serialNum) || serialNum < 1) {
+    showStatus('❌ Serial Number must be a valid number greater than 0.', 'error');
+    return;
+  }
 
-    if (isNaN(serialNum) || serialNum < 1) {
-      showStatus('❌ Serial Number must be a valid number greater than 0.', 'error');
-      return;
+  if (maxSerial !== null && serialNum > maxSerial) {
+    showStatus(`❌ Serial Number cannot be greater than ${maxSerial} for this section.`, 'error');
+    return;
+  }
+
+  submitBtn.disabled = true;
+  showModal("Submitting attendance...");
+
+  const payload = {
+    date: dateSelect.value,
+    group: groupSelect.value,
+    email: document.getElementById('email').value.trim(),
+    rollNumber: document.getElementById('rollNumber').value.trim(),
+    serialNumber: serialInput.value.trim()
+  };
+
+  try {
+    const response = await fetch(SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload)
+    });
+
+    const result = await response.json();
+
+    if (result.status === 'success') {
+      showStatus('✅ ' + (result.message || 'Attendance marked successfully!'), 'success');
+      serialInput.value = '';
+    } else if (result.status === 'conflict') {
+      showStatus('⚠️ ' + (result.message || 'Duplicate submission detected.'), 'warning');
+    } else {
+      showStatus('❌ ' + (result.message || 'An error occurred during submission.'), 'error');
     }
-
-    if (maxSerial !== null && serialNum > maxSerial) {
-      showStatus(`❌ Serial Number cannot be greater than ${maxSerial} for this section.`, 'error');
-      return;
-    }
-
-    submitBtn.disabled = true;
-    showModal("Submitting attendance...");
-
-    const payload = {
-      date: dateSelect.value,
-      group: groupSelect.value,
-      googleEmail: googleEmail,
-      email: document.getElementById('email').value.trim(),
-      rollNumber: document.getElementById('rollNumber').value.trim(),
-      serialNumber: serialInput.value.trim()
-    };
-
-    try {
-      const response = await fetch(SCRIPT_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify(payload)
-      });
-
-      const result = await response.json();
-
-      if (result.status === 'success') {
-        showStatus('✅ ' + (result.message || 'Attendance marked successfully!'), 'success');
-        serialInput.value = '';
-      } else if (result.status === 'conflict') {
-        showStatus('⚠️ ' + (result.message || 'Duplicate submission detected.'), 'warning');
-      } else {
-        showStatus('❌ ' + (result.message || 'An error occurred during submission.'), 'error');
-      }
-    } catch (err) {
-      showStatus('❌ Submission failed. Please try again.', 'error');
-    } finally {
-      hideModal();
-      submitBtn.disabled = false;
-    }
-  });
-}
+  } catch (err) {
+    showStatus('❌ Submission failed. Please try again.', 'error');
+  } finally {
+    hideModal();
+    submitBtn.disabled = false;
+  }
+});
 
 function showStatus(text, type) {
-  if (statusMessage) {
-    statusMessage.textContent = text;
-    statusMessage.className = `status-msg ${type}`;
-    statusMessage.style.display = 'block';
-    checkStatusHelp();
-  }
+  statusMessage.textContent = text;
+  statusMessage.className = `status-msg ${type}`;
+  statusMessage.style.display = 'block';
+  checkStatusHelp();
 }
 
 function hideStatus() {
-  if (statusMessage) statusMessage.style.display = 'none';
+  statusMessage.style.display = 'none';
 }
 
 function checkStatusHelp() {
+  const statusMessage = document.getElementById("statusMessage");
   const statusHelp = document.getElementById("statusHelp");
   const statusOk = document.getElementById("okStatus");
 
@@ -367,10 +334,13 @@ function checkStatusHelp() {
   } else {
     statusHelp.style.display = "none";
 
-    if (statusMessage.textContent.includes("Attendance marked successfully") && statusOk) {
+    if (statusMessage.textContent.includes("Attendance marked successfully")) {
       statusOk.style.display = "block";
-    } else if (statusOk) {
+    } else {
       statusOk.style.display = "none";
     }
   }
 }
+
+// Initialize Page
+loadConfig();
