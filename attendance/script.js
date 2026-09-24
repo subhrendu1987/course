@@ -102,25 +102,6 @@ function populateDates() {
   });
 }
 
-
-
-/*function populateDates() {
-  dateSelect.innerHTML = '<option value="">-- Select Date --</option>';
-  const dates = Object.keys(configData).filter(d => d !== 'Date');
-
-  if (dates.length === 0) {
-    dateSelect.innerHTML = '<option value="">No dates available</option>';
-    return;
-  }
-
-  dates.forEach(date => {
-    const opt = document.createElement('option');
-    opt.value = date;
-    opt.textContent = date.replace(/_/g, '/');
-    dateSelect.appendChild(opt);
-  });
-}*/
-
 // Handle Date Selection Change
 dateSelect.addEventListener('change', () => {
   const selectedDate = dateSelect.value;
@@ -363,7 +344,8 @@ async function handleCredentialResponse(response) {
     enableFormInputs();
 
     // Fetch config and populate dates
-    await loadConfig();
+    //await loadConfig();
+    populateDates();
 
   } catch (err) {
     showStatus("Google Authentication failed. Please try again.", "error");
