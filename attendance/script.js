@@ -1,7 +1,7 @@
 // Web App Deployment Endpoint
 //const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwGKmP2E9yDjd1MNhMdB7K-ZecdB5wAQhLcYbo89-vlQCP7XLhgLXJPdt7PE_JD1LWHMQ/exec";
 
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxS0xSdeQkhzFQLqfGLME7JtcJfkRsRLLhz2l_EtNCjT5a_HgbtXqSkCZOPJOAR0naP/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwVnxbkylSC6aKiZ7e7UdrKogVqsVrFTQOEZ8exauIUj47XrQpgK9TAaRBOpR56ESoR/exec";
 
 let configData = {};
 let isZoomed = false;
@@ -344,3 +344,106 @@ function checkStatusHelp() {
 
 // Initialize Page
 loadConfig();
+
+let googleEmail = ""; // Stores Google account email from OAuth
+
+// Google OAuth Callback Function
+function handleCredentialResponse(response) {
+  try {
+    // Decode Google JWT Payload
+    const responsePayload = parseJwt(response.credential);
+    googleEmail = responsePayload.email;
+
+    const authStatus = document.getElementById('authStatus');
+    authStatus.innerHTML = `Signed in as: <strong>${googleEmail}</strong>`;
+    authStatus.classList.add('authenticated');
+
+    // Enable Form Fields after OAuth
+    enableFormFields();
+
+    // Load form configurations
+    loadConfig();
+  } catch (err) {
+    showStatus("Google Authentication Failed. Please try again.", "error");
+  }
+}
+
+// Helper: JWT Decoder
+function parseJwt(token) {
+  const base64Url = token.split('.')[1];
+  const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+  const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
+      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+  }).join(''));
+
+  return JSON.parse(jsonPayload);
+}
+
+function enableFormFields() {
+  dateSelect.disabled = false;
+  document.getElementById('email').disabled = false;
+  document.getElementById('rollNumber').disabled = false;
+  serialInput.disabled = false;
+  submitBtn.disabled = false;
+}
+
+// Form Submission Updated Payload
+attendanceForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  hideStatus();
+
+  if (!googleEmail) {
+    showStatus('❌ Please sign in with Google first.', 'error');
+    return;
+  }
+
+  const serialNum = parseInt(serialInput.value.trim(), 10);
+  const maxSerial = getMaxSerial();
+
+  if (isNaN(serialNum) || serialNum < 1) {
+    showStatus('❌ Serial Number must be a valid number greater than 0.', 'error');
+    return;
+  }
+
+  if (maxSerial !== null && serialNum > maxSerial) {
+    showStatus(`❌ Serial Number cannot be greater than ${maxSerial} for this section.`, 'error');
+    return;
+  }
+
+  submitBtn.disabled = true;
+  showModal("Submitting attendance...");
+
+  // Send both googleEmail and officialEmail
+  const payload = {
+    date: dateSelect.value,
+    group: groupSelect.value,
+    googleEmail: googleEmail,
+    officialEmail: document.getElementById('email').value.trim(),
+    rollNumber: document.getElementById('rollNumber').value.trim(),
+    serialNumber: serialInput.value.trim()
+  };
+
+  try {
+    const response = await fetch(SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload)
+    });
+
+    const result = await response.json();
+
+    if (result.status === 'success') {
+      showStatus('✅ ' + (result.message || 'Attendance marked successfully!'), 'success');
+      serialInput.value = '';
+    } else if (result.status === 'conflict') {
+      showStatus('⚠️ ' + (result.message || 'Duplicate submission detected.'), 'warning');
+    } else {
+      showStatus('❌ ' + (result.message || 'An error occurred during submission.'), 'error');
+    }
+  } catch (err) {
+    showStatus('❌ Submission failed. Please try again.', 'error');
+  } finally {
+    hideModal();
+    submitBtn.disabled = false;
+  }
+});

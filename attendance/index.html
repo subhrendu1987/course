@@ -9,6 +9,9 @@
   <meta http-equiv="Expires" content="0">
   <title>Student Attendance System for UTA018L and UTA018P</title>
   <link rel="stylesheet" href="style.css">
+
+  <!-- Include Google Identity Services Library -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
 
@@ -28,17 +31,16 @@
     </div>
     <div class="help-content">
       <ol>
+        <li><strong>Google Sign-In:</strong> Sign in with your Google account.</li>
         <li><strong>Select Date:</strong> Choose your current class date.</li>
         <li><strong>Select Group:</strong> Pick your designated lab or lecture group.</li>
-        <li><strong>View Layout:</strong> Confirm your seat using the seating diagram. Click to view full screen, then click again to zoom into specific sections.</li>
-        <li><strong>Fill Details:</strong> Enter your thapar/student email, roll number, and seat/serial number from the given image.</li>
+        <li><strong>View Layout:</strong> Confirm your seat using the seating diagram.</li>
+        <li><strong>Fill Details:</strong> Enter your official email ID, roll number, and seat number.</li>
         <li><strong>Submit:</strong> Click <em>Submit Attendance</em> to record your entry.</li>
-        <li><strong>Note:</strong> Fill all the details correctly. Otherwise, your attendance will be discarded.</li>
-        <li><strong>Note:</strong> Mark your attendance within a week of the commencement of the class. After which the attendance will be freezed and no alteration will be possible.</li>
       </ol>
       <div class="discrepancy-note">
         <strong>⚠️ Reporting Discrepancies:</strong><br>
-        Please contact the Instructor in person to report any attendance discrepancy during student visiting hours.
+        Please contact the Instructor in person during student visiting hours.
       </div>
     </div>
   </div>
@@ -48,11 +50,30 @@
   <h1>Student Attendance System for UTA018L/UTA018P (Object Oriented Programming with C++)</h1>
 
   <form id="attendanceForm">
+
+    <!-- Google OAuth Button Block -->
+    <div class="form-group">
+      <label>Google Authentication</label>
+      <div id="g_id_onload"
+           data-client_id="873564791429-3f0dlpnc5tma0o9467p9m7kqcm597qc3.apps.googleusercontent.com"
+           data-callback="handleCredentialResponse"
+           data-auto_prompt="false">
+      </div>
+      <div class="g_id_signin"
+           data-type="standard"
+           data-size="large"
+           data-theme="outline"
+           data-text="sign_in_with"
+           data-shape="rectangular"
+           data-logo_alignment="left">
+      </div>
+      <div id="authStatus" class="auth-status-msg"></div>
+    </div>
     
     <div class="form-group">
       <label for="classDate">Select Date</label>
-      <select id="classDate" required>
-        <option value="">Loading dates...</option>
+      <select id="classDate" required disabled>
+        <option value="">Authenticate with Google First</option>
       </select>
     </div>
 
@@ -70,27 +91,29 @@
 
     <div class="form-group">
       <label for="email">Official/Institute Email ID</label>
-      <input type="email" id="email" placeholder="student@example.com" required>
+      <input type="email" id="email" placeholder="student@example.com" required disabled>
     </div>
 
     <div class="form-group">
       <label for="rollNumber">Roll Number</label>
-      <input type="text" id="rollNumber" placeholder="e.g. 102103001" required>
+      <input type="text" id="rollNumber" placeholder="e.g. 102103001" required disabled>
     </div>
 
     <div class="form-group">
       <label for="serialNumber">Seat / Serial Number</label>
-      <input type="number" id="serialNumber" placeholder="e.g. 12" required min="1">
+      <input type="number" id="serialNumber" placeholder="e.g. 12" required min="1" disabled>
     </div>
 
-    <button type="submit" id="submitBtn">Submit Attendance</button>
+    <button type="submit" id="submitBtn" disabled>Submit Attendance</button>
   </form>
 
   <div id="statusMessage" class="status-msg"></div>
-  <div id="statusHelp" class="status-hlp"> Email the corresponding student keeping the instructor in CC with the subject line
- <strong>"UTA018 Attendance Issue"</strong>. Clearly mention <strong>Date, Section, RollNo. and Seat No.</strong> in the email along with the issue. Upon receiving this type of email, the attendance will be
-  deleted within <strong>2 days</strong>.</div>
-  <div id="okStatus" class="ok-status"><a href="https://suchat-subho.github.io/course/oop/?url=chkattendance"> Check current attendance status</a></div>
+  <div id="statusHelp" class="status-hlp">
+    Email the corresponding student keeping the instructor in CC with the subject line <strong>"UTA018 Attendance Issue"</strong>.
+  </div>
+  <div id="okStatus" class="ok-status">
+    <a href="https://suchat-subho.github.io/course/oop/?url=chkattendance">Check current attendance status</a>
+  </div>
 </div>
 
 <div id="loadingModal" class="modal-overlay">
@@ -102,7 +125,7 @@
 
 <div id="imageModal" class="image-modal-overlay">
   <span id="closeImageModal" class="close-modal">&times;</span>
-  <img id="fullscreenImg" class="fullscreen-image" alt="Fullscreen Classroom View" title="Click to zoom in / out">
+  <img id="fullscreenImg" class="fullscreen-image" alt="Fullscreen Classroom View">
 </div>
 
 <script src="script.js"></script>

@@ -388,3 +388,14 @@ button:disabled {
   cursor: pointer;
   z-index: 2010;
 }
+
+.auth-status-msg {
+  margin-top: 8px;
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+.auth-status-msg.authenticated {
+  color: var(--success);
+  font-weight: 600;
+}
