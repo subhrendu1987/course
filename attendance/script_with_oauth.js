@@ -3,7 +3,7 @@ const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwVnxbkylSC6aKiZ7e7U
 
 let configData = {};
 let isZoomed = false;
-let googleEmail = "guest_user@example.com"; // Bypassed OAuth identity
+let googleEmail = "bypassed_user@example.com"; // Bypassed
 
 // DOM Elements
 const dateSelect = document.getElementById('classDate');
@@ -74,12 +74,13 @@ function enableFormInputs() {
 }
 
 // ------------------------------------------------------------
-// CONFIG FETCHING & DROPDOWN POPULATION (NO AUTH VALIDATION)
+// CONFIG FETCHING & DROPDOWN POPULATION (NO AUTH CHECK)
 // ------------------------------------------------------------
 
 async function loadConfig() {
+  // Clear any existing hardcoded HTML options immediately
   if (dateSelect) {
-    dateSelect.innerHTML = '<option value="">-- Loading Dates... --</option>';
+    dateSelect.innerHTML = '<option value="">Loading dates...</option>';
   }
 
   showModal("Please wait. Loading options...");
@@ -132,7 +133,7 @@ function populateDates() {
 }
 
 // ------------------------------------------------------------
-// SELECTION & IMAGE PREVIEW HANDLERS
+// SELECTION & PREVIEW HANDLERS
 // ------------------------------------------------------------
 
 if (dateSelect) {
@@ -222,72 +223,6 @@ function resetSerialLimit() {
 }
 
 // ------------------------------------------------------------
-// LIGHTBOX & ZOOM LOGIC
-// ------------------------------------------------------------
-
-if (previewImg) {
-  previewImg.addEventListener('click', () => {
-    if (previewImg.src) {
-      fullscreenImg.src = previewImg.src;
-      imageModal.classList.add('active');
-    }
-  });
-}
-
-if (fullscreenImg) {
-  fullscreenImg.addEventListener('click', (e) => {
-    e.stopPropagation();
-    isZoomed = !isZoomed;
-
-    if (isZoomed) {
-      fullscreenImg.classList.add('zoomed');
-      updateZoomPosition(e);
-    } else {
-      resetZoom();
-    }
-  });
-
-  fullscreenImg.addEventListener('mousemove', (e) => {
-    if (isZoomed) updateZoomPosition(e);
-  });
-}
-
-function updateZoomPosition(e) {
-  const rect = fullscreenImg.getBoundingClientRect();
-  const x = ((e.clientX - rect.left) / rect.width) * 100;
-  const y = ((e.clientY - rect.top) / rect.height) * 100;
-  fullscreenImg.style.transformOrigin = `${x}% ${y}%`;
-}
-
-function resetZoom() {
-  isZoomed = false;
-  if (fullscreenImg) {
-    fullscreenImg.classList.remove('zoomed');
-    fullscreenImg.style.transformOrigin = 'center center';
-  }
-}
-
-function closeFullscreen() {
-  resetZoom();
-  if (imageModal) imageModal.classList.remove('active');
-}
-
-if (closeImageModal) closeImageModal.addEventListener('click', closeFullscreen);
-
-if (imageModal) {
-  imageModal.addEventListener('click', (e) => {
-    if (e.target === imageModal) closeFullscreen();
-  });
-}
-
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') {
-    if (imageModal && imageModal.classList.contains('active')) closeFullscreen();
-    if (helpBox && helpBox.classList.contains('active')) helpBox.classList.remove('active');
-  }
-});
-
-// ------------------------------------------------------------
 // FORM SUBMISSION HANDLING
 // ------------------------------------------------------------
 
@@ -352,31 +287,11 @@ function showStatus(text, type) {
     statusMessage.textContent = text;
     statusMessage.className = `status-msg ${type}`;
     statusMessage.style.display = 'block';
-    checkStatusHelp();
   }
 }
 
 function hideStatus() {
   if (statusMessage) statusMessage.style.display = 'none';
-}
-
-function checkStatusHelp() {
-  const statusHelp = document.getElementById("statusHelp");
-  const statusOk = document.getElementById("okStatus");
-
-  if (!statusMessage || !statusHelp) return;
-
-  if (statusMessage.textContent.includes("has already been claimed")) {
-    statusHelp.style.display = "block";
-  } else {
-    statusHelp.style.display = "none";
-
-    if (statusMessage.textContent.includes("Attendance marked successfully") && statusOk) {
-      statusOk.style.display = "block";
-    } else if (statusOk) {
-      statusOk.style.display = "none";
-    }
-  }
 }
 
 // Run immediately on page load
