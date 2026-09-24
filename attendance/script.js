@@ -11,8 +11,6 @@ const groupSelect = document.getElementById('groupName');
 const previewImg = document.getElementById('previewImg');
 const previewPlaceholder = document.getElementById('previewPlaceholder');
 const serialInput = document.getElementById('serialNumber');
-const emailInput = document.getElementById('email');
-const rollInput = document.getElementById('rollNumber');
 const attendanceForm = document.getElementById('attendanceForm');
 const submitBtn = document.getElementById('submitBtn');
 const statusMessage = document.getElementById('statusMessage');
@@ -73,10 +71,10 @@ async function handleCredentialResponse(response) {
       authStatus.classList.add('authenticated');
     }
 
-    // Enable inputs upon successful authentication
+    // Enable form fields once authenticated
     enableFormInputs();
 
-    // Fetch config data if not already loaded, then populate dates
+    // If configData hasn't been fetched yet, fetch it now; otherwise populate directly
     if (Object.keys(configData).length === 0) {
       await loadConfig();
     } else {
@@ -88,7 +86,7 @@ async function handleCredentialResponse(response) {
   }
 }
 
-// Helper: Decode JWT Token
+// Decode Base64 JWT Payload from Google One Tap / GIS
 function parseJwt(token) {
   const base64Url = token.split('.')[1];
   const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
@@ -104,31 +102,34 @@ function parseJwt(token) {
 
 function enableFormInputs() {
   dateSelect.disabled = false;
-  if (emailInput) emailInput.disabled = false;
-  if (rollInput) rollInput.disabled = false;
+  const emailElem = document.getElementById('email');
+  const rollElem = document.getElementById('rollNumber');
+
+  if (emailElem) emailElem.disabled = false;
+  if (rollElem) rollElem.disabled = false;
   if (serialInput) serialInput.disabled = false;
-  if (submitBtn) submitBtn.disabled = false;
 }
 
 // ------------------------------------------------------------
-// DATA FETCHING & DROPDOWN POPULATION
+// CONFIG FETCHING & DROPDOWN POPULATION
 // ------------------------------------------------------------
 
 // Fetch Config Data from Google Apps Script Backend
 async function loadConfig() {
   showModal("Please wait. Loading options...");
   try {
-    const response = await fetch(SCRIPT_URL);
+    const response = await fetch(`${SCRIPT_URL}?_=${Date.now()}`);
     const json = await response.json();
 
     if (json.status === "success" && json.data) {
       configData = json.data;
-      
-      // Populate dates if user is authenticated
+
+      // Automatically populate dates if user is already logged in
       if (googleEmail) {
         populateDates();
       } else {
-        dateSelect.innerHTML = '<option value="">Authenticate with Google First</option>';
+        dateSelect.innerHTML = '<option value="">Authenticate with Google Login First</option>';
+        dateSelect.disabled = true;
       }
     } else {
       showStatus("Failed to load options from server. Try later...", "error");
@@ -165,11 +166,12 @@ function populateDates() {
     dateSelect.appendChild(opt);
   });
 
+  // Unlock selection dropdown
   dateSelect.disabled = false;
 }
 
 // ------------------------------------------------------------
-// SELECTION HANDLERS & IMAGE PREVIEW
+// SELECTION & IMAGE PREVIEW HANDLERS
 // ------------------------------------------------------------
 
 // Handle Date Selection Change
@@ -252,7 +254,10 @@ function resetSerialLimit() {
   serialInput.placeholder = "e.g. 12";
 }
 
-// Lightbox Zoom Event Listeners
+// ------------------------------------------------------------
+// LIGHTBOX & ZOOM LOGIC
+// ------------------------------------------------------------
+
 previewImg.addEventListener('click', () => {
   if (previewImg.src) {
     fullscreenImg.src = previewImg.src;
@@ -316,7 +321,7 @@ attendanceForm.addEventListener('submit', async (e) => {
   hideStatus();
 
   if (!googleEmail) {
-    showStatus('❌ Please authenticate with Google first.', 'error');
+    showStatus('❌ Authenticate with Google Login First.', 'error');
     return;
   }
 
@@ -340,8 +345,8 @@ attendanceForm.addEventListener('submit', async (e) => {
     date: dateSelect.value,
     group: groupSelect.value,
     googleEmail: googleEmail,
-    email: emailInput.value.trim(),
-    rollNumber: rollInput.value.trim(),
+    email: document.getElementById('email').value.trim(),
+    rollNumber: document.getElementById('rollNumber').value.trim(),
     serialNumber: serialInput.value.trim()
   };
 
@@ -400,9 +405,5 @@ function checkStatusHelp() {
   }
 }
 
-// ------------------------------------------------------------
-// INITIALIZATION
-// ------------------------------------------------------------
-
-// Prefetch configuration options on page load
+// Initialize Page Load
 loadConfig();
