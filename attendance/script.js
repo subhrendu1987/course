@@ -3,7 +3,7 @@ const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwVnxbkylSC6aKiZ7e7U
 
 let configData = {};
 let isZoomed = false;
-let googleEmail = "guest_user@example.com"; // Bypassed OAuth identity
+let googleEmail = "";
 
 // DOM Elements
 const dateSelect = document.getElementById('classDate');
@@ -74,14 +74,10 @@ function enableFormInputs() {
 }
 
 // ------------------------------------------------------------
-// CONFIG FETCHING & DROPDOWN POPULATION (NO AUTH VALIDATION)
+// CONFIG FETCHING & DROPDOWN POPULATION
 // ------------------------------------------------------------
 
 async function loadConfig() {
-  if (dateSelect) {
-    dateSelect.innerHTML = '<option value="">-- Loading Dates... --</option>';
-  }
-
   showModal("Please wait. Loading options...");
   try {
     const response = await fetch(`${SCRIPT_URL}?_=${Date.now()}`);
@@ -378,6 +374,3 @@ function checkStatusHelp() {
     }
   }
 }
-
-// Run immediately on page load
-loadConfig();

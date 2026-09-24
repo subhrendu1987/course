@@ -10,11 +10,6 @@
   <div class="container">
     <h2>Student Attendance Portal</h2>
 
-    <!-- Authentication Status Box (Optional / Bypassed Display) -->
-    <div id="authStatus" class="auth-status">
-      Authentication: <strong>Bypassed (Guest Mode)</strong>
-    </div>
-
     <!-- Status Message Container -->
     <div id="statusMessage" class="status-msg" style="display: none;"></div>
     
@@ -32,7 +27,7 @@
       <div class="form-group">
         <label for="classDate">Class Date:</label>
         <select id="classDate" required disabled>
-          <option value="">-- Loading Dates... --</option>
+          <option value="">-- Authenticate with Google Login First --</option>
         </select>
       </div>
 
@@ -56,19 +51,19 @@
       <!-- Email Field -->
       <div class="form-group">
         <label for="email">Thapar Email ID:</label>
-        <input type="email" id="email" placeholder="student@thapar.edu" required>
+        <input type="email" id="email" placeholder="student@thapar.edu" required disabled>
       </div>
 
       <!-- Roll Number Field -->
       <div class="form-group">
         <label for="rollNumber">Roll Number:</label>
-        <input type="text" id="rollNumber" placeholder="e.g. 102103001" required>
+        <input type="text" id="rollNumber" placeholder="e.g. 102103001" required disabled>
       </div>
 
       <!-- Serial Number Field -->
       <div class="form-group">
         <label for="serialNumber">Annotated Serial Number:</label>
-        <input type="number" id="serialNumber" placeholder="e.g. 12" min="1" required>
+        <input type="number" id="serialNumber" placeholder="e.g. 12" min="1" required disabled>
       </div>
 
       <button type="submit" id="submitBtn">Submit Attendance</button>
@@ -103,6 +98,6 @@
     <img id="fullscreenImg" src="" alt="Enlarged Classroom Image">
   </div>
 
-  <script src="script.js?v=2.0"></script>
+  <script src="script.js"></script>
 </body>
 </html>
