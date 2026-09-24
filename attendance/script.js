@@ -344,106 +344,99 @@ function checkStatusHelp() {
 
 // Initialize Page
 loadConfig();
-
-let googleEmail = ""; // Stores Google account email from OAuth
+/*  *************************************************** */
+let googleEmail = "";
 
 // Google OAuth Callback Function
-function handleCredentialResponse(response) {
+async function handleCredentialResponse(response) {
   try {
-    // Decode Google JWT Payload
-    const responsePayload = parseJwt(response.credential);
-    googleEmail = responsePayload.email;
+    const payload = parseJwt(response.credential);
+    googleEmail = payload.email;
 
     const authStatus = document.getElementById('authStatus');
-    authStatus.innerHTML = `Signed in as: <strong>${googleEmail}</strong>`;
-    authStatus.classList.add('authenticated');
+    if (authStatus) {
+      authStatus.innerHTML = `Signed in as: <strong>${googleEmail}</strong>`;
+      authStatus.classList.add('authenticated');
+    }
 
-    // Enable Form Fields after OAuth
-    enableFormFields();
+    // Enable inputs once authenticated
+    enableFormInputs();
 
-    // Load form configurations
-    loadConfig();
+    // Fetch config and populate dates
+    await loadConfig();
+
   } catch (err) {
-    showStatus("Google Authentication Failed. Please try again.", "error");
+    showStatus("Google Authentication failed. Please try again.", "error");
   }
 }
 
-// Helper: JWT Decoder
+// Decode Base64 JWT Payload
 function parseJwt(token) {
   const base64Url = token.split('.')[1];
   const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-  const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
-      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-  }).join(''));
+  const jsonPayload = decodeURIComponent(
+    window.atob(base64)
+      .split('')
+      .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+      .join('')
+  );
 
   return JSON.parse(jsonPayload);
 }
 
-function enableFormFields() {
+function enableFormInputs() {
   dateSelect.disabled = false;
   document.getElementById('email').disabled = false;
   document.getElementById('rollNumber').disabled = false;
   serialInput.disabled = false;
-  submitBtn.disabled = false;
 }
 
-// Form Submission Updated Payload
-attendanceForm.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  hideStatus();
+// Populate Date Dropdown
+function populateDates() {
+  dateSelect.innerHTML = '<option value="">-- Select Date --</option>';
 
-  if (!googleEmail) {
-    showStatus('❌ Please sign in with Google first.', 'error');
-    return;
-  }
-
-  const serialNum = parseInt(serialInput.value.trim(), 10);
-  const maxSerial = getMaxSerial();
-
-  if (isNaN(serialNum) || serialNum < 1) {
-    showStatus('❌ Serial Number must be a valid number greater than 0.', 'error');
-    return;
-  }
-
-  if (maxSerial !== null && serialNum > maxSerial) {
-    showStatus(`❌ Serial Number cannot be greater than ${maxSerial} for this section.`, 'error');
-    return;
-  }
-
-  submitBtn.disabled = true;
-  showModal("Submitting attendance...");
-
-  // Send both googleEmail and officialEmail
-  const payload = {
-    date: dateSelect.value,
-    group: groupSelect.value,
-    googleEmail: googleEmail,
-    officialEmail: document.getElementById('email').value.trim(),
-    rollNumber: document.getElementById('rollNumber').value.trim(),
-    serialNumber: serialInput.value.trim()
-  };
-
-  try {
-    const response = await fetch(SCRIPT_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(payload)
+  const dates = Object.keys(configData)
+    .filter(d => d !== 'Date')
+    .sort((a, b) => {
+      const [dayA, monthA, yearA] = a.split('_').map(Number);
+      const [dayB, monthB, yearB] = b.split('_').map(Number);
+      return new Date(yearB, monthB - 1, dayB) - new Date(yearA, monthA - 1, dayA);
     });
 
-    const result = await response.json();
+  if (dates.length === 0) {
+    dateSelect.innerHTML = '<option value="">No dates available</option>';
+    return;
+  }
 
-    if (result.status === 'success') {
-      showStatus('✅ ' + (result.message || 'Attendance marked successfully!'), 'success');
-      serialInput.value = '';
-    } else if (result.status === 'conflict') {
-      showStatus('⚠️ ' + (result.message || 'Duplicate submission detected.'), 'warning');
+  dates.forEach(date => {
+    const opt = document.createElement('option');
+    opt.value = date;
+    opt.textContent = date.replace(/_/g, '/');
+    dateSelect.appendChild(opt);
+  });
+
+  // Ensure dateSelect is enabled after populating
+  if (googleEmail) {
+    dateSelect.disabled = false;
+  }
+}
+
+// Fetch Config Data on Page Load / Post-Auth
+async function loadConfig() {
+  showModal("Please wait. Loading options...");
+  try {
+    const response = await fetch(SCRIPT_URL);
+    const json = await response.json();
+
+    if (json.status === "success" && json.data) {
+      configData = json.data;
+      populateDates();
     } else {
-      showStatus('❌ ' + (result.message || 'An error occurred during submission.'), 'error');
+      showStatus("Failed to load options from server. Try later...", "error");
     }
   } catch (err) {
-    showStatus('❌ Submission failed. Please try again.', 'error');
+    showStatus("Network error while loading configuration.", "error");
   } finally {
     hideModal();
-    submitBtn.disabled = false;
   }
-});
+}
