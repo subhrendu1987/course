@@ -3,7 +3,7 @@ const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwVnxbkylSC6aKiZ7e7U
 
 let configData = {};
 let isZoomed = false;
-let googleEmail = "";
+let googleEmail = "bypassed_user@example.com"; // Placeholder for bypassed OAuth
 
 // DOM Elements
 const dateSelect = document.getElementById('classDate');
@@ -30,33 +30,41 @@ const helpBox = document.getElementById('helpBox');
 const closeHelpBtn = document.getElementById('closeHelpBtn');
 
 // Toggle Help Box
-helpToggleBtn.addEventListener('click', (e) => {
-  e.stopPropagation();
-  helpBox.classList.toggle('active');
-});
+if (helpToggleBtn) {
+  helpToggleBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    helpBox.classList.toggle('active');
+  });
+}
 
-closeHelpBtn.addEventListener('click', () => {
-  helpBox.classList.remove('active');
-});
+if (closeHelpBtn) {
+  closeHelpBtn.addEventListener('click', () => {
+    helpBox.classList.remove('active');
+  });
+}
 
 // Close Help Box when clicking outside
 document.addEventListener('click', (e) => {
-  if (!helpBox.contains(e.target) && e.target !== helpToggleBtn) {
+  if (helpBox && !helpBox.contains(e.target) && e.target !== helpToggleBtn) {
     helpBox.classList.remove('active');
   }
 });
 
 function showModal(text = "Processing request...") {
-  loadingText.textContent = text;
-  loadingModal.classList.add('active');
+  if (loadingText && loadingModal) {
+    loadingText.textContent = text;
+    loadingModal.classList.add('active');
+  }
 }
 
 function hideModal() {
-  loadingModal.classList.remove('active');
+  if (loadingModal) {
+    loadingModal.classList.remove('active');
+  }
 }
 
 // ------------------------------------------------------------
-// GOOGLE OAUTH HANDLING
+// GOOGLE OAUTH HANDLING (BYPASSED / PRESERVED)
 // ------------------------------------------------------------
 
 // Google OAuth Callback Function (Exposed globally for GIS)
@@ -71,22 +79,15 @@ async function handleCredentialResponse(response) {
       authStatus.classList.add('authenticated');
     }
 
-    // Enable form inputs once authenticated
     enableFormInputs();
-
-    // Fetch config data if not fetched yet, or populate dates immediately
-    if (Object.keys(configData).length === 0) {
-      await loadConfig();
-    } else {
-      populateDates();
-    }
+    populateDates();
 
   } catch (err) {
     showStatus("Google Authentication failed. Please try again.", "error");
   }
 }
 
-// Decode Base64 JWT Payload from Google One Tap / GIS
+// Decode Base64 JWT Payload
 function parseJwt(token) {
   const base64Url = token.split('.')[1];
   const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
@@ -123,14 +124,9 @@ async function loadConfig() {
 
     if (json.status === "success" && json.data) {
       configData = json.data;
-
-      // Automatically populate dates if user is logged in
-      if (googleEmail) {
-        populateDates();
-      } else {
-        dateSelect.innerHTML = '<option value="">Authenticate with Google Login First</option>';
-        dateSelect.disabled = true;
-      }
+      // AUTH CHECK BYPASSED: Always populate dates after config loads
+      populateDates();
+      enableFormInputs();
     } else {
       showStatus("Failed to load options from server. Try later...", "error");
     }
@@ -143,12 +139,6 @@ async function loadConfig() {
 
 // Populate Date Dropdown
 function populateDates() {
-  if (!googleEmail) {
-    dateSelect.innerHTML = '<option value="">Authenticate with Google Login First</option>';
-    dateSelect.disabled = true;
-    return;
-  }
-
   const dates = Object.keys(configData)
     .filter(d => d !== 'Date')
     .sort((a, b) => {
@@ -173,7 +163,6 @@ function populateDates() {
     dateSelect.appendChild(opt);
   });
 
-  // Explicitly unlock date selection box
   dateSelect.disabled = false;
 }
 
@@ -181,7 +170,6 @@ function populateDates() {
 // SELECTION & IMAGE PREVIEW HANDLERS
 // ------------------------------------------------------------
 
-// Handle Date Selection Change
 dateSelect.addEventListener('change', () => {
   const selectedDate = dateSelect.value;
   groupSelect.innerHTML = '<option value="">-- Select Group --</option>';
@@ -202,7 +190,6 @@ dateSelect.addEventListener('change', () => {
   }
 });
 
-// Handle Group Selection Change -> Update Image & Limits
 groupSelect.addEventListener('change', () => {
   updateImagePreview();
   updateSerialLimit();
@@ -230,7 +217,6 @@ function resetPreview() {
   previewPlaceholder.style.display = 'block';
 }
 
-// Helper: Get maxSerial for current selected Date and Group
 function getMaxSerial() {
   const selectedDate = dateSelect.value;
   const selectedGroup = groupSelect.value;
@@ -244,7 +230,6 @@ function getMaxSerial() {
   return null;
 }
 
-// Update input max attribute & placeholder based on maxSerial
 function updateSerialLimit() {
   const maxSerial = getMaxSerial();
 
@@ -265,28 +250,32 @@ function resetSerialLimit() {
 // LIGHTBOX & ZOOM LOGIC
 // ------------------------------------------------------------
 
-previewImg.addEventListener('click', () => {
-  if (previewImg.src) {
-    fullscreenImg.src = previewImg.src;
-    imageModal.classList.add('active');
-  }
-});
+if (previewImg) {
+  previewImg.addEventListener('click', () => {
+    if (previewImg.src) {
+      fullscreenImg.src = previewImg.src;
+      imageModal.classList.add('active');
+    }
+  });
+}
 
-fullscreenImg.addEventListener('click', (e) => {
-  e.stopPropagation();
-  isZoomed = !isZoomed;
+if (fullscreenImg) {
+  fullscreenImg.addEventListener('click', (e) => {
+    e.stopPropagation();
+    isZoomed = !isZoomed;
 
-  if (isZoomed) {
-    fullscreenImg.classList.add('zoomed');
-    updateZoomPosition(e);
-  } else {
-    resetZoom();
-  }
-});
+    if (isZoomed) {
+      fullscreenImg.classList.add('zoomed');
+      updateZoomPosition(e);
+    } else {
+      resetZoom();
+    }
+  });
 
-fullscreenImg.addEventListener('mousemove', (e) => {
-  if (isZoomed) updateZoomPosition(e);
-});
+  fullscreenImg.addEventListener('mousemove', (e) => {
+    if (isZoomed) updateZoomPosition(e);
+  });
+}
 
 function updateZoomPosition(e) {
   const rect = fullscreenImg.getBoundingClientRect();
@@ -297,25 +286,29 @@ function updateZoomPosition(e) {
 
 function resetZoom() {
   isZoomed = false;
-  fullscreenImg.classList.remove('zoomed');
-  fullscreenImg.style.transformOrigin = 'center center';
+  if (fullscreenImg) {
+    fullscreenImg.classList.remove('zoomed');
+    fullscreenImg.style.transformOrigin = 'center center';
+  }
 }
 
 function closeFullscreen() {
   resetZoom();
-  imageModal.classList.remove('active');
+  if (imageModal) imageModal.classList.remove('active');
 }
 
-closeImageModal.addEventListener('click', closeFullscreen);
+if (closeImageModal) closeImageModal.addEventListener('click', closeFullscreen);
 
-imageModal.addEventListener('click', (e) => {
-  if (e.target === imageModal) closeFullscreen();
-});
+if (imageModal) {
+  imageModal.addEventListener('click', (e) => {
+    if (e.target === imageModal) closeFullscreen();
+  });
+}
 
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
-    if (imageModal.classList.contains('active')) closeFullscreen();
-    if (helpBox.classList.contains('active')) helpBox.classList.remove('active');
+    if (imageModal && imageModal.classList.contains('active')) closeFullscreen();
+    if (helpBox && helpBox.classList.contains('active')) helpBox.classList.remove('active');
   }
 });
 
@@ -326,11 +319,6 @@ document.addEventListener('keydown', (e) => {
 attendanceForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   hideStatus();
-
-  if (!googleEmail) {
-    showStatus('❌ Authenticate with Google Login First.', 'error');
-    return;
-  }
 
   const serialNum = parseInt(serialInput.value.trim(), 10);
   const maxSerial = getMaxSerial();
@@ -383,14 +371,16 @@ attendanceForm.addEventListener('submit', async (e) => {
 });
 
 function showStatus(text, type) {
-  statusMessage.textContent = text;
-  statusMessage.className = `status-msg ${type}`;
-  statusMessage.style.display = 'block';
-  checkStatusHelp();
+  if (statusMessage) {
+    statusMessage.textContent = text;
+    statusMessage.className = `status-msg ${type}`;
+    statusMessage.style.display = 'block';
+    checkStatusHelp();
+  }
 }
 
 function hideStatus() {
-  statusMessage.style.display = 'none';
+  if (statusMessage) statusMessage.style.display = 'none';
 }
 
 function checkStatusHelp() {
@@ -404,13 +394,13 @@ function checkStatusHelp() {
   } else {
     statusHelp.style.display = "none";
 
-    if (statusMessage.textContent.includes("Attendance marked successfully")) {
+    if (statusMessage.textContent.includes("Attendance marked successfully") && statusOk) {
       statusOk.style.display = "block";
-    } else {
+    } else if (statusOk) {
       statusOk.style.display = "none";
     }
   }
 }
 
-// Initialize Page Load
+// Initial direct execution
 loadConfig();
