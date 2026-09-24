@@ -1,16 +1,18 @@
 // Web App Deployment Endpoint
-//const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwGKmP2E9yDjd1MNhMdB7K-ZecdB5wAQhLcYbo89-vlQCP7XLhgLXJPdt7PE_JD1LWHMQ/exec";
-
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwVnxbkylSC6aKiZ7e7UdrKogVqsVrFTQOEZ8exauIUj47XrQpgK9TAaRBOpR56ESoR/exec";
 
 let configData = {};
 let isZoomed = false;
+let googleEmail = "";
 
+// DOM Elements
 const dateSelect = document.getElementById('classDate');
 const groupSelect = document.getElementById('groupName');
 const previewImg = document.getElementById('previewImg');
 const previewPlaceholder = document.getElementById('previewPlaceholder');
 const serialInput = document.getElementById('serialNumber');
+const emailInput = document.getElementById('email');
+const rollInput = document.getElementById('rollNumber');
 const attendanceForm = document.getElementById('attendanceForm');
 const submitBtn = document.getElementById('submitBtn');
 const statusMessage = document.getElementById('statusMessage');
@@ -55,7 +57,64 @@ function hideModal() {
   loadingModal.classList.remove('active');
 }
 
-// Fetch Config Data on Page Load
+// ------------------------------------------------------------
+// GOOGLE OAUTH HANDLING
+// ------------------------------------------------------------
+
+// Google OAuth Callback Function (Exposed globally for GIS)
+async function handleCredentialResponse(response) {
+  try {
+    const payload = parseJwt(response.credential);
+    googleEmail = payload.email;
+
+    const authStatus = document.getElementById('authStatus');
+    if (authStatus) {
+      authStatus.innerHTML = `Signed in as: <strong>${googleEmail}</strong>`;
+      authStatus.classList.add('authenticated');
+    }
+
+    // Enable inputs upon successful authentication
+    enableFormInputs();
+
+    // Fetch config data if not already loaded, then populate dates
+    if (Object.keys(configData).length === 0) {
+      await loadConfig();
+    } else {
+      populateDates();
+    }
+
+  } catch (err) {
+    showStatus("Google Authentication failed. Please try again.", "error");
+  }
+}
+
+// Helper: Decode JWT Token
+function parseJwt(token) {
+  const base64Url = token.split('.')[1];
+  const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+  const jsonPayload = decodeURIComponent(
+    window.atob(base64)
+      .split('')
+      .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+      .join('')
+  );
+
+  return JSON.parse(jsonPayload);
+}
+
+function enableFormInputs() {
+  dateSelect.disabled = false;
+  if (emailInput) emailInput.disabled = false;
+  if (rollInput) rollInput.disabled = false;
+  if (serialInput) serialInput.disabled = false;
+  if (submitBtn) submitBtn.disabled = false;
+}
+
+// ------------------------------------------------------------
+// DATA FETCHING & DROPDOWN POPULATION
+// ------------------------------------------------------------
+
+// Fetch Config Data from Google Apps Script Backend
 async function loadConfig() {
   showModal("Please wait. Loading options...");
   try {
@@ -64,7 +123,13 @@ async function loadConfig() {
 
     if (json.status === "success" && json.data) {
       configData = json.data;
-      populateDates();
+      
+      // Populate dates if user is authenticated
+      if (googleEmail) {
+        populateDates();
+      } else {
+        dateSelect.innerHTML = '<option value="">Authenticate with Google First</option>';
+      }
     } else {
       showStatus("Failed to load options from server. Try later...", "error");
     }
@@ -75,7 +140,7 @@ async function loadConfig() {
   }
 }
 
-// Populate Date Dropdown (skips non-date header keys if present)
+// Populate Date Dropdown
 function populateDates() {
   dateSelect.innerHTML = '<option value="">-- Select Date --</option>';
 
@@ -85,8 +150,7 @@ function populateDates() {
       const [dayA, monthA, yearA] = a.split('_').map(Number);
       const [dayB, monthB, yearB] = b.split('_').map(Number);
 
-      return new Date(yearB, monthB - 1, dayB) -
-             new Date(yearA, monthA - 1, dayA);
+      return new Date(yearB, monthB - 1, dayB) - new Date(yearA, monthA - 1, dayA);
     });
 
   if (dates.length === 0) {
@@ -100,7 +164,13 @@ function populateDates() {
     opt.textContent = date.replace(/_/g, '/');
     dateSelect.appendChild(opt);
   });
+
+  dateSelect.disabled = false;
 }
+
+// ------------------------------------------------------------
+// SELECTION HANDLERS & IMAGE PREVIEW
+// ------------------------------------------------------------
 
 // Handle Date Selection Change
 dateSelect.addEventListener('change', () => {
@@ -237,15 +307,22 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
-// Form Submission Handling
+// ------------------------------------------------------------
+// FORM SUBMISSION HANDLING
+// ------------------------------------------------------------
+
 attendanceForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   hideStatus();
 
+  if (!googleEmail) {
+    showStatus('❌ Please authenticate with Google first.', 'error');
+    return;
+  }
+
   const serialNum = parseInt(serialInput.value.trim(), 10);
   const maxSerial = getMaxSerial();
 
-  // Validate Serial Number against upper bound
   if (isNaN(serialNum) || serialNum < 1) {
     showStatus('❌ Serial Number must be a valid number greater than 0.', 'error');
     return;
@@ -262,8 +339,9 @@ attendanceForm.addEventListener('submit', async (e) => {
   const payload = {
     date: dateSelect.value,
     group: groupSelect.value,
-    email: document.getElementById('email').value.trim(),
-    rollNumber: document.getElementById('rollNumber').value.trim(),
+    googleEmail: googleEmail,
+    email: emailInput.value.trim(),
+    rollNumber: rollInput.value.trim(),
     serialNumber: serialInput.value.trim()
   };
 
@@ -304,7 +382,6 @@ function hideStatus() {
 }
 
 function checkStatusHelp() {
-  const statusMessage = document.getElementById("statusMessage");
   const statusHelp = document.getElementById("statusHelp");
   const statusOk = document.getElementById("okStatus");
 
@@ -323,102 +400,9 @@ function checkStatusHelp() {
   }
 }
 
-// Initialize Page
+// ------------------------------------------------------------
+// INITIALIZATION
+// ------------------------------------------------------------
+
+// Prefetch configuration options on page load
 loadConfig();
-/*  *************************************************** */
-let googleEmail = "";
-
-// Google OAuth Callback Function
-async function handleCredentialResponse(response) {
-  try {
-    const payload = parseJwt(response.credential);
-    googleEmail = payload.email;
-
-    const authStatus = document.getElementById('authStatus');
-    if (authStatus) {
-      authStatus.innerHTML = `Signed in as: <strong>${googleEmail}</strong>`;
-      authStatus.classList.add('authenticated');
-    }
-
-    // Enable inputs once authenticated
-    enableFormInputs();
-
-    // Fetch config and populate dates
-    //await loadConfig();
-    populateDates();
-
-  } catch (err) {
-    showStatus("Google Authentication failed. Please try again.", "error");
-  }
-}
-
-// Decode Base64 JWT Payload
-function parseJwt(token) {
-  const base64Url = token.split('.')[1];
-  const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-  const jsonPayload = decodeURIComponent(
-    window.atob(base64)
-      .split('')
-      .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-      .join('')
-  );
-
-  return JSON.parse(jsonPayload);
-}
-
-function enableFormInputs() {
-  dateSelect.disabled = false;
-  document.getElementById('email').disabled = false;
-  document.getElementById('rollNumber').disabled = false;
-  serialInput.disabled = false;
-}
-
-// Populate Date Dropdown
-function populateDates() {
-  dateSelect.innerHTML = '<option value="">-- Select Date --</option>';
-
-  const dates = Object.keys(configData)
-    .filter(d => d !== 'Date')
-    .sort((a, b) => {
-      const [dayA, monthA, yearA] = a.split('_').map(Number);
-      const [dayB, monthB, yearB] = b.split('_').map(Number);
-      return new Date(yearB, monthB - 1, dayB) - new Date(yearA, monthA - 1, dayA);
-    });
-
-  if (dates.length === 0) {
-    dateSelect.innerHTML = '<option value="">No dates available</option>';
-    return;
-  }
-
-  dates.forEach(date => {
-    const opt = document.createElement('option');
-    opt.value = date;
-    opt.textContent = date.replace(/_/g, '/');
-    dateSelect.appendChild(opt);
-  });
-
-  // Ensure dateSelect is enabled after populating
-  if (googleEmail) {
-    dateSelect.disabled = false;
-  }
-}
-
-// Fetch Config Data on Page Load / Post-Auth
-async function loadConfig() {
-  showModal("Please wait. Loading options...");
-  try {
-    const response = await fetch(SCRIPT_URL);
-    const json = await response.json();
-
-    if (json.status === "success" && json.data) {
-      configData = json.data;
-      populateDates();
-    } else {
-      showStatus("Failed to load options from server. Try later...", "error");
-    }
-  } catch (err) {
-    showStatus("Network error while loading configuration.", "error");
-  } finally {
-    hideModal();
-  }
-}
