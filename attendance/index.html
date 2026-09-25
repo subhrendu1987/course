@@ -28,6 +28,7 @@
     </div>
     <div class="help-content">
       <ol>
+        <li><strong>Google Sign-In:</strong> Sign in with your Google account.</li>
         <li><strong>Select Date:</strong> Choose your current class date.</li>
         <li><strong>Select Group:</strong> Pick your designated lab or lecture group.</li>
         <li><strong>View Layout:</strong> Confirm your seat using the seating diagram. Click to view full screen, then click again to zoom into specific sections.</li>
@@ -46,6 +47,36 @@
 
 <div class="container">
   <h1>Student Attendance System for UTA018L/UTA018P (Object Oriented Programming with C++)</h1>
+  <!----------------------------->
+    <!-- Google OAuth Button Block -->
+    <div class="form-group">
+      <center><label>Google Authentication</label>
+      <div id="g_id_onload"
+           data-client_id="873564791429-3f0dlpnc5tma0o9467p9m7kqcm597qc3.apps.googleusercontent.com"
+           data-callback="handleCredentialResponse"
+           data-auto_prompt="false">
+      </div>
+      <div class="g_id_signin"
+           data-type="standard"
+           data-size="large"
+           data-theme="outline"
+           data-text="sign_in_with"
+           data-shape="rectangular"
+           data-logo_alignment="left">
+      </div>
+      <div id="authStatus" class="auth-status-msg"></div>
+    </div></center>
+    
+    <div class="form-group">
+      <label for="classDate">Select Date</label>
+      <select id="classDate" required disabled>
+        <option value="">Authenticate with Google First</option>
+      </select>
+    </div>
+    <!--------------------------------------------->
+
+
+
 
   <form id="attendanceForm">
     
